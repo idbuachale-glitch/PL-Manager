@@ -99,6 +99,10 @@ export const RATINGS = {
   // 15 highest start-of-season FPL prices). Stronger squads make individual stats look worse
   // for some roles, and FM rates players at big clubs higher. In overall points per spread.
   clubStrengthBonus: { squadSize: 15, perSd: 1.0, min: -1, max: 1.5 },
+  // Overall scale for regular players (by percentile within position): the weakest regular
+  // starter is about 9-10, a median one about 13, the best 19-20. Fringe players with few
+  // minutes are blended toward their price estimate, so youngsters can sit lower.
+  overallCurve: { base: 9, range: 11, power: 1.3 },
   overallPriceBlend: 0.25,     // 25% of overall from start-of-season price, so one odd season can't sink a star
 
   // Hidden potential: overall + age bonus, ±1 random (fixed per player), capped at 20.

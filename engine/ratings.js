@@ -199,7 +199,11 @@ export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DE
     const rawPool = rated.filter((r) => r.mins >= R.poolMinMinutes[pos]).map((r) => r.raw).sort((a, b) => a - b);
     for (const r of rated) {
       const teamLift = clubLift(r.p.teamCode);
-      const overall = clamp((1 - R.overallPriceBlend) * curve(percentile(rawPool, r.raw)) + R.overallPriceBlend * r.priceLevel + teamLift, R.scale.min, R.scale.max);
+      const oc = R.overallCurve;
+      const regular = oc.base + oc.range * percentile(rawPool, r.raw) ** oc.power;
+      const w = Math.min(1, r.mins / R.shrink.fullMinutes) ** R.shrink.power;
+      const fromStats = w * regular + (1 - w) * Math.min(regular, r.priceLevel + 1);
+      const overall = clamp((1 - R.overallPriceBlend) * fromStats + R.overallPriceBlend * r.priceLevel + teamLift, R.scale.min, R.scale.max);
 
       const jitter = (hash01(r.p.code ?? r.p.id) * 2 - 1) * R.potentialJitter;
       const potential = clamp(Math.max(overall, overall + lookup(R.potentialAgeBonus, r.ageUsed) + jitter), R.scale.min, R.scale.max);
