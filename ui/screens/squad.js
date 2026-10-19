@@ -1,7 +1,7 @@
 // Squad: pick the XI on a pitch (tap a spot, then a player) and browse player cards.
 
 import { h, cx } from '../dom.js';
-import { game, ui, userSquad, userLineup, userFormation, placeInSlot, bestXI } from '../store.js';
+import { game, ui, userSquad, userLineup, userFormation, placeInSlot, bestXI, toBench, toReserves, BENCH_SIZE } from '../store.js';
 import { Crest, Attr, FitnessBar, FormArrow, StatusIcon, Sheet } from '../components/common.js';
 import { PlayerProfile } from '../components/profile.js';
 import { slotScore, isAvailable } from '../../engine/lineup.js';
@@ -31,29 +31,75 @@ export function Squad(rerender) {
   const inXI = new Map(lu.slots.map((s, i) => [s.player?.id, i]));
   const pick = ui.squadPick;
 
-  let players = userSquad();
-  if (filter !== 'ALL') players = players.filter((p) => p.pos === filter);
+  const pickSlot = pick != null ? lu.slots[pick].slot : null;
+  const benchIds = new Set(lu.bench.map((p) => p.id));
+  const keep = (p) => filter === 'ALL' || p.pos === filter;
   const sorters = {
-    position: (a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos] || b.overall - a.overall,
-    rating: (a, b) => b.overall - a.overall,
-    form: (a, b) => (b.dyn.form - a.dyn.form) || b.overall - a.overall,
+    position: (a, b) => posKey(a) - posKey(b) || b.overallExact - a.overallExact,
+    rating: (a, b) => b.overallExact - a.overallExact,
+    form: (a, b) => (b.dyn.form - a.dyn.form) || b.overallExact - a.overallExact,
     fitness: (a, b) => b.dyn.condition - a.dyn.condition,
   };
-  players = [...players].sort(sorters[ui.squadSort]);
-  // When choosing for a spot, best fits for that spot go first.
-  if (pick != null) {
-    const slot = lu.slots[pick].slot;
-    players = [...players].sort((a, b) => (isAvailable(b) - isAvailable(a)) || slotScore(b, slot) - slotScore(a, slot));
-  }
+  const order = pickSlot
+    ? (a, b) => slotScore(b, pickSlot) - slotScore(a, pickSlot)   // best fits for the chosen spot first
+    : sorters[ui.squadSort];
+  const squad = userSquad();
+  const xiPlayers = lu.slots.map((x) => x.player).filter(Boolean);
+  const sections = {
+    xi: xiPlayers.filter(keep),
+    bench: lu.bench.filter(keep).sort(order),
+    reserves: squad.filter((p) => isAvailable(p) && !inXI.has(p.id) && !benchIds.has(p.id)).filter(keep).sort(order),
+    out: squad.filter((p) => !isAvailable(p)).filter(keep).sort(order),
+  };
+  if (pickSlot) sections.xi = [...sections.xi].filter((p) => lu.slots[pick].player?.id !== p.id).sort(order);
+
+  const openProfile = (p) => {
+    const where = inXI.has(p.id) ? 'xi' : benchIds.has(p.id) ? 'bench' : isAvailable(p) ? 'reserves' : 'out';
+    const close = () => { ui.sheet = null; rerender(); };
+    const benchFull = lu.bench.length >= BENCH_SIZE;
+    const actions = h('div', { class: 'profile-actions' },
+      where === 'xi' ? h('p', { class: 'muted small' }, 'In your starting XI. Tap his shirt on the pitch to replace him.') : null,
+      where === 'bench' ? h('button', { class: 'btn-soft', onClick: () => { toReserves(p.id); close(); } }, 'Move to reserves') : null,
+      where === 'reserves' ? h('button', { class: 'btn-primary', disabled: benchFull, onClick: () => { toBench(p.id); close(); } },
+        benchFull ? `Bench is full (${BENCH_SIZE})` : 'Add to bench') : null,
+      where === 'reserves' && benchFull ? h('p', { class: 'muted small' }, 'Move someone off the bench first.') : null,
+      where === 'out' ? h('p', { class: 'muted small' }, p.dyn.injuredFor > 0 ? 'Injured, so he cannot be picked yet.' : 'Suspended, so he cannot be picked yet.') : null);
+    ui.sheet = () => Sheet(h('div', null, actions, PlayerProfile(p)), close, { title: p.name });
+    rerender();
+  };
 
   const onRow = (p) => {
     if (pick != null) {
       if (!isAvailable(p)) return;
       placeInSlot(pick, p.id); ui.squadPick = null; rerender();
-    } else {
-      ui.sheet = () => Sheet(PlayerProfile(p), () => { ui.sheet = null; rerender(); }, { title: p.name });
-      rerender();
-    }
+    } else openProfile(p);
+  };
+
+  const row = (p, where) => {
+    const slot = where === 'xi' && !pickSlot ? lu.slots[inXI.get(p.id)].slot : null;
+    const lvl = pickSlot ? fitLevel(p, pickSlot) : slot ? fitLevel(p, slot) : null;
+    const rating = pickSlot ? slotRating(p, pickSlot) : slot ? slotRating(p, slot) : p.overall;
+    return h('li', null,
+      h('button', { class: cx('prow', !isAvailable(p) && 'unavail'), onClick: () => onRow(p) },
+        Attr(rating, 'prow-ovr'),
+        h('span', { class: 'prow-main' },
+          h('span', { class: 'prow-name' }, p.webName, StatusIcon(p)),
+          h('span', { class: 'prow-sub muted small' },
+            slot ? h('span', { class: cx('xi-tag', `xt-${lvl}`) }, slot) : where === 'bench' && !pickSlot ? h('span', { class: 'sub-tag' }, 'SUB') : null,
+            pickSlot ? h('span', { class: `fit-label fl-${lvl}` }, FIT_TEXT[lvl])
+              : slot && lvl !== 'natural' ? h('span', { class: `fit-label fl-${lvl}` }, `${FIT_TEXT[lvl]} (${posText(p)})`)
+                : `${posText(p)}, age ${p.age}`)),
+        FormArrow(p.dyn.form),
+        FitnessBar(p.dyn.condition)));
+  };
+
+  const section = (key, title, note) => {
+    const list = sections[key];
+    if (!list.length && (key === 'out' || filter !== 'ALL')) return null;
+    return h('section', { class: 'psec' },
+      h('header', { class: 'psec-head' }, h('h2', null, title), h('span', { class: 'muted small' }, note)),
+      list.length ? h('ul', { class: 'player-list' }, list.map((p) => row(p, key)))
+        : h('p', { class: 'muted small psec-empty' }, key === 'bench' ? 'No substitutes picked. Add players from the reserves.' : 'Nobody here.'));
   };
 
   return h('main', { class: 'screen squad' },
@@ -100,22 +146,14 @@ export function Squad(rerender) {
     h('div', { class: 'filters' },
       h('div', { class: 'chips', role: 'group', 'aria-label': 'Filter by position' },
         ['ALL', 'GK', 'DEF', 'MID', 'FWD'].map((f) => h('button', { class: cx('chip', filter === f && 'on'), onClick: () => { filter = f; rerender(); } }, f === 'ALL' ? 'All' : f))),
-      h('label', { class: 'sort' }, h('span', { class: 'muted small' }, 'Sort'),
+      pickSlot ? null : h('label', { class: 'sort' }, h('span', { class: 'muted small' }, 'Sort'),
         h('select', { onChange: (e) => { ui.squadSort = e.target.value; rerender(); } },
           Object.entries(SORTS).map(([k, v]) => h('option', { value: k, selected: ui.squadSort === k }, v))))),
 
-    h('ul', { class: 'player-list' }, players.map((p) => {
-      const pickSlot = pick != null ? lu.slots[pick].slot : null;
-      const lvl = pickSlot ? fitLevel(p, pickSlot) : null;
-      return h('li', null,
-      h('button', { class: cx('prow', inXI.has(p.id) && 'in-xi', !isAvailable(p) && 'unavail'), onClick: () => onRow(p) },
-        pickSlot ? Attr(slotRating(p, pickSlot), 'prow-ovr') : Attr(p.overall, 'prow-ovr'),
-        h('span', { class: 'prow-main' },
-          h('span', { class: 'prow-name' }, p.webName, StatusIcon(p)),
-          h('span', { class: 'prow-sub muted small' },
-            inXI.has(p.id) ? h('span', { class: 'xi-tag' }, SLOT_NAMES[lu.slots[inXI.get(p.id)].slot]) : null,
-            pickSlot ? h('span', { class: `fit-label fl-${lvl}` }, FIT_TEXT[lvl]) : `${posText(p)}, age ${p.age}`)),
-        FormArrow(p.dyn.form),
-        FitnessBar(p.dyn.condition)));
-    })));
+    pickSlot
+      ? [section('bench', 'Bench', 'best fits first'), section('reserves', 'Reserves', 'best fits first'), section('xi', 'Swap with a starter', 'they trade places')]
+      : [section('xi', 'Starting XI', formation), section('bench', 'Bench', `${lu.bench.length} of ${BENCH_SIZE}`), section('reserves', 'Reserves', `${sections.reserves.length}`), section('out', 'Unavailable', 'injured or suspended')]);
 }
+
+const SLOT_ORDER = { GK: 0, CB: 1, FB: 2, WB: 3, DM: 4, CM: 5, AM: 6, W: 7, ST: 8 };
+const posKey = (p) => SLOT_ORDER[positionsOf(p).natural[0]] ?? 9;

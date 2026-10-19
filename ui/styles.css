@@ -415,3 +415,15 @@ select { background: var(--surface); border: 0; border-radius: 10px; padding: 8p
 .positions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
 .pos-tag { font-family: var(--font-c); font-weight: 700; font-size: 13px; padding: 1px 7px; border-radius: 5px; background: var(--grass-soft); color: var(--grass); }
 .pos-tag.sec { background: var(--amber-soft); color: var(--amber); }
+
+/* Squad sections */
+.psec { display: flex; flex-direction: column; gap: 8px; }
+.psec-head { display: flex; align-items: baseline; justify-content: space-between; padding: 6px 4px 0; }
+.psec-head h2 { font-size: 21px; }
+.psec-empty { background: var(--surface); border-radius: 14px; padding: 14px; }
+.sub-tag { font-family: var(--font-c); font-weight: 700; font-size: 12px; color: var(--chalk); background: var(--raised); border-radius: 5px; padding: 0 6px; line-height: 18px; }
+.xi-tag.xt-secondary { background: var(--amber); }
+.xi-tag.xt-natural { background: var(--grass); }
+.xi-tag.xt-unfamiliar, .xi-tag.xt-wrong { background: var(--red); color: #fff; }
+.profile-actions { display: grid; gap: 6px; margin-bottom: 14px; }
+.profile-actions:empty { display: none; }

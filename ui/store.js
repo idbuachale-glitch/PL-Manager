@@ -2,7 +2,7 @@
 
 import { createSeason, playFixture, playGameweek, advanceWeek, table, squadOf } from '../engine/season.js';
 export { squadOf };
-import { pickLineup } from '../engine/lineup.js';
+import { pickLineup, isAvailable } from '../engine/lineup.js';
 import { PRESETS } from '../engine/tactics.js';
 import { makeNews } from './lib/news.js';
 import { squadStrength } from '../engine/ai.js';
@@ -63,26 +63,56 @@ export function quitToMenu() {
 export const userSquad = () => squadOf(game, game.userClub);
 export const userFormation = () => game.user.lineup?.formation ?? game.clubs[game.userClub].formation;
 
+export const BENCH_SIZE = 9;
+
 export function userLineup() {
   const formation = userFormation();
   const locked = (game.user.lineup?.ids ?? []).map((playerId, index) => ({ index, playerId })).filter((x) => x.playerId);
-  return pickLineup(userSquad(), formation, { locked, rotation: 0 });
+  const lu = pickLineup(userSquad(), formation, { locked, rotation: 0 });
+  // The manager's chosen bench (only available players not in the XI).
+  if (game.user.bench) {
+    const xi = new Set(lu.slots.map((x) => x.player?.id));
+    lu.bench = game.user.bench.map((id) => game.players[id])
+      .filter((p) => p && p.teamCode === game.userClub && isAvailable(p) && !xi.has(p.id)).slice(0, BENCH_SIZE);
+  }
+  return lu;
 }
 
 export function autoPickUserXI() {
   const lu = pickLineup(userSquad(), userFormation(), { rotation: 1 });
   game.user.lineup = { formation: lu.formation, ids: lu.slots.map((s) => s.player?.id ?? null) };
+  game.user.bench = lu.bench.map((p) => p.id);
+}
+
+export function toBench(id) {
+  const bench = userLineup().bench.map((p) => p.id);
+  if (bench.length >= BENCH_SIZE || bench.includes(id)) return false;
+  game.user.bench = [...bench, id];
+  save(); notify();
+  return true;
+}
+
+export function toReserves(id) {
+  game.user.bench = userLineup().bench.map((p) => p.id).filter((x) => x !== id);
+  save(); notify();
 }
 
 export function bestXI() { autoPickUserXI(); save(); notify(); }
 
 // Put player into slot index (swapping if he was already in the XI).
 export function placeInSlot(index, playerId) {
-  const ids = [...(game.user.lineup?.ids ?? userLineup().slots.map((s) => s.player?.id ?? null))];
+  const lu = userLineup();
+  const ids = lu.slots.map((x) => x.player?.id ?? null);
+  const bench = lu.bench.map((p) => p.id);
+  const outgoing = ids[index];
   const from = ids.indexOf(playerId);
-  if (from >= 0) ids[from] = ids[index];
+  if (from >= 0) ids[from] = outgoing;            // swap two XI players
   ids[index] = playerId;
+  // A sub coming in swaps places with the player going out.
+  const b = bench.indexOf(playerId);
+  if (b >= 0) { if (outgoing) bench[b] = outgoing; else bench.splice(b, 1); }
   game.user.lineup = { formation: userFormation(), ids };
+  game.user.bench = bench;
   save(); notify();
 }
 
@@ -130,6 +160,7 @@ export function setTactics(t) { game.user.tactics = { ...game.user.tactics, ...t
 export function setFormation(formation) {
   const lu = pickLineup(userSquad(), formation, { rotation: 1 });
   game.user.lineup = { formation, ids: lu.slots.map((s) => s.player?.id ?? null) };
+  game.user.bench = lu.bench.map((p) => p.id);
   save(); notify();
 }
 
