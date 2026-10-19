@@ -20,20 +20,36 @@ export const RATINGS = {
   // Starting estimate for players with little or no Premier League data last season:
   // their FPL price, compared with others in the same position, put through the curve
   // and pulled toward the middle so nobody gets an extreme rating from price alone.
-  priceEstimate: { pullToMiddle: 0.75 },
+  priceEstimate: { pullToMiddle: 0.75, spread: 0.6 },
+
+  // Shared outfield scale: rating = centre + perSd x (how many spreads above the outfield average).
+  // Spreads the top end so elite players separate (Haaland vs a mid-table striker).
+  // Separate settings per ability, tuned so a typical Premier League striker has Attack ~14
+  // and only the very best reach 19–20.
+  sharedScale: {
+    attack: { centre: 9, perSd: 2.2 },
+    passing: { centre: 10, perSd: 2.6 },
+    defending: { centre: 10, perSd: 2.6 },
+  },
 
   // Stats behind each ability (all per 90 minutes unless marked as a rate).
   // Weights are added up from standardised scores, then turned into a percentile.
+  // Attack, Passing and Defending compare ALL outfield players on one shared scale (like FM),
+  // so a striker's Attack is naturally higher than a centre-back's.
   abilities: {
     attack: { expected_goals: 0.45, goals_scored: 0.25, threat: 0.30 },
     passing: { expected_assists: 0.40, creativity: 0.40, assists: 0.20 },
     defending: {
-      outfield: { defensive_contribution: 0.70, influence: 0.30 },
-      DEF: { defensive_contribution: 0.35, clean_sheet_rate: 0.35, goals_conceded_low: 0.30 },
+      // Tackles + clearances/blocks/interceptions count the same way for every position.
+      outfield: { tackles: 0.5, clearances_blocks_interceptions: 0.5 },
       GK: { clean_sheet_rate: 0.50, goals_prevented: 0.50 },
     },
     goalkeeping: { goals_prevented: 0.40, clean_sheet_rate: 0.35, saves: 0.25 },
   },
+
+  // Defenders also get up to ±2 Defending from how well their team defended
+  // (clean sheets and goals conceded per 90, compared with other defenders).
+  defenderTeamBonus: { range: 2, weights: { clean_sheet_rate: 0.5, goals_conceded_low: 0.5 } },
 
   // Share of every stat-based ability taken from price, so one odd season can't
   // give a star a silly low number. Keepers get more, because their stats are noisier.
@@ -56,14 +72,14 @@ export const RATINGS = {
   // Goalkeepers have no meaningful passing stats, so their passing comes from price.
   gkPassingFromPrice: true,
 
-  // Overall = weighted average of abilities, stretched so the range feels like FM.
+  // Overall = weighted average of abilities, then compared with others in the same position,
+  // so it means "how good for his position" (abilities themselves stay on one shared scale).
   overallWeights: {
     GK: { goalkeeping: 0.80, passing: 0.10, stamina: 0.10 },
     DEF: { defending: 0.50, passing: 0.15, pace: 0.15, stamina: 0.15, attack: 0.05 },
     MID: { passing: 0.35, attack: 0.25, defending: 0.15, stamina: 0.15, pace: 0.10 },
     FWD: { attack: 0.45, pace: 0.20, passing: 0.15, stamina: 0.15, defending: 0.05 },
   },
-  overallStretch: 1.15,        // spreads the overall around the position average
   overallPriceBlend: 0.15,     // 15% of overall from price, to catch odd outliers
 
   // Hidden potential: overall + age bonus, ±1 random (fixed per player), capped at 20.

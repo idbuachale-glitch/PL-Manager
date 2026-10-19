@@ -6,7 +6,7 @@ import { RATINGS as DEFAULT_RATINGS, VALUE as DEFAULT_VALUE } from './config.js'
 const POSITIONS = ['GK', 'DEF', 'MID', 'FWD'];
 const PER90_STATS = [
   'expected_goals', 'goals_scored', 'threat', 'expected_assists', 'creativity',
-  'assists', 'defensive_contribution', 'influence', 'saves',
+  'assists', 'tackles', 'clearances_blocks_interceptions', 'defensive_contribution', 'influence', 'saves',
 ];
 
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
@@ -68,45 +68,64 @@ export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DE
   const players = rawPlayers.map((p) => ({ ...p, stats: deriveStats(p.last) }));
   const out = [];
 
+  const STAT_KEYS = [...PER90_STATS, 'clean_sheet_rate', 'goals_prevented', 'goals_conceded_low'];
+  const inPool = (p) => p.stats && p.stats.minutes >= R.poolMinMinutes[p.pos];
+  const makeDist = (pool) => Object.fromEntries(STAT_KEYS.map((k) => [k, meanSd(pool.map((p) => p.stats[k]))]));
+  const makeComposite = (dist, zCap = 3) => (p, weights) => {
+    let sum = 0, wsum = 0;
+    for (const [key, w] of Object.entries(weights)) {
+      const d = dist[key], v = p.stats?.[key];
+      if (d && v !== null && v !== undefined) { sum += w * clamp((v - d.mean) / d.sd, -zCap, zCap); wsum += w; }
+    }
+    return wsum ? sum / wsum : null;
+  };
+  const sortedComposites = (pool, composite, weights) =>
+    pool.map((p) => composite(p, weights)).filter((x) => x !== null).sort((a, b) => a - b);
+
+  // Shared outfield scale for Attack, Passing and Defending.
+  const outfieldPool = players.filter((p) => p.pos !== 'GK' && inPool(p));
+  const outfieldComposite = makeComposite(makeDist(outfieldPool), 5);
+  const outfieldWeights = {
+    attack: R.abilities.attack,
+    passing: R.abilities.passing,
+    defending: R.abilities.defending.outfield,
+  };
+  // Shared abilities use standardised composites (not percentiles) so the top end doesn't bunch up.
+  const outfieldLevel = Object.fromEntries(Object.entries(outfieldWeights).map(([a, w]) => {
+    const ms = meanSd(outfieldPool.map((p) => outfieldComposite(p, w)));
+    const sc = R.sharedScale[a];
+    return [a, (c) => clamp(sc.centre + sc.perSd * (c - ms.mean) / ms.sd, R.scale.min, R.scale.max)];
+  }));
+  const threatPool = outfieldPool.map((p) => p.stats.threat).filter((x) => x !== null).sort((a, b) => a - b);
+
   for (const pos of POSITIONS) {
     const group = players.filter((p) => p.pos === pos);
     if (!group.length) continue;
-    const pool = group.filter((p) => p.stats && p.stats.minutes >= R.poolMinMinutes[pos]);
+    const pool = group.filter(inPool);
+    const posComposite = makeComposite(makeDist(pool));
 
-    // Pool averages and spreads for every stat.
-    const dist = {};
-    for (const key of [...PER90_STATS, 'clean_sheet_rate', 'goals_prevented', 'goals_conceded_low']) {
-      dist[key] = meanSd(pool.map((p) => p.stats[key]));
+    // Each ability: which weights, which comparison (shared outfield or within position).
+    const abilities = {};
+    if (pos === 'GK') {
+      const within = (w) => { const sorted = sortedComposites(pool, posComposite, w); return { weights: w, composite: posComposite, level: (c) => curve(percentile(sorted, c)) }; };
+      abilities.goalkeeping = within(R.abilities.goalkeeping);
+      abilities.defending = within(R.abilities.defending.GK);
+      if (!R.gkPassingFromPrice) abilities.passing = within(R.abilities.passing);
+    } else {
+      for (const [a, w] of Object.entries(outfieldWeights)) abilities[a] = { weights: w, composite: outfieldComposite, level: outfieldLevel[a] };
     }
-    const z = (p, key) => {
-      const d = dist[key], v = p.stats?.[key];
-      return d && v !== null && v !== undefined ? clamp((v - d.mean) / d.sd, -3, 3) : null;
-    };
-    const composite = (p, weights) => {
-      let sum = 0, wsum = 0;
-      for (const [key, w] of Object.entries(weights)) {
-        const zz = z(p, key);
-        if (zz !== null) { sum += w * zz; wsum += w; }
-      }
-      return wsum ? sum / wsum : null;
-    };
+    const teamBonusSorted = pos === 'DEF' ? sortedComposites(pool, posComposite, R.defenderTeamBonus.weights) : null;
 
-    // Which weights each ability uses for this position.
-    const abilityWeights = {
-      passing: R.abilities.passing,
-      defending: pos === 'GK' ? R.abilities.defending.GK : pos === 'DEF' ? R.abilities.defending.DEF : R.abilities.defending.outfield,
-    };
-    if (pos === 'GK') abilityWeights.goalkeeping = R.abilities.goalkeeping;
-    else abilityWeights.attack = R.abilities.attack;
-    if (pos === 'GK' && R.gkPassingFromPrice) delete abilityWeights.passing;
-
-    // Pool composites, sorted, for percentiles.
-    const poolSorted = {};
-    for (const [ability, w] of Object.entries(abilityWeights)) {
-      poolSorted[ability] = pool.map((p) => composite(p, w)).filter((x) => x !== null).sort((a, b) => a - b);
+    // Typical level of each ability for this position (median of regular players),
+    // used as the starting point for players with little or no data.
+    const typical = {};
+    for (const [a, ab] of Object.entries(abilities)) {
+      const levels = pool.map((p) => ab.composite(p, ab.weights)).filter((x) => x !== null)
+        .map((c) => ab.level(c)).sort((x, y) => x - y);
+      typical[a] = levels.length ? levels[levels.length >> 1] : curve(0.5);
     }
-    const threatPool = pool.map((p) => p.stats.threat).filter((x) => x !== null).sort((a, b) => a - b);
     const pricesSorted = group.map((p) => p.price).sort((a, b) => a - b);
+    const mid = curve(0.5);
 
     const rated = group.map((p) => {
       const age = ageOn(p.birthDate, referenceDate);
@@ -120,13 +139,19 @@ export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DE
       if (age === null) estimated.push('age');
 
       const attrs = {};
-      for (const [ability, weights] of Object.entries(abilityWeights)) {
-        const c = p.stats ? composite(p, weights) : null;
-        const statLevel = c === null ? priceLevel : curve(percentile(poolSorted[ability], c));
+      const pb = R.abilityPriceBlend[pos === 'GK' ? 'GK' : 'outfield'];
+      for (const [ability, ab] of Object.entries(abilities)) {
+        const prior = clamp(typical[ability] + R.priceEstimate.spread * (priceLevel - mid), R.scale.min, R.scale.max);
+        const c = p.stats ? ab.composite(p, ab.weights) : null;
+        const statLevel = c === null ? prior : ab.level(c);
         const ww = c === null ? 0 : w;
-        const pb = R.abilityPriceBlend[pos === 'GK' ? 'GK' : 'outfield'];
-        attrs[ability] = (1 - pb) * (ww * statLevel + (1 - ww) * priceLevel) + pb * priceLevel;
+        attrs[ability] = (1 - pb) * (ww * statLevel + (1 - ww) * prior) + pb * prior;
       }
+      if (teamBonusSorted && p.stats) {
+        const tc = posComposite(p, R.defenderTeamBonus.weights);
+        if (tc !== null) attrs.defending += w * R.defenderTeamBonus.range * 2 * (percentile(teamBonusSorted, tc) - 0.5);
+      }
+      for (const a of Object.keys(abilities)) attrs[a] = clamp(attrs[a], R.scale.min, R.scale.max);
       if (pos === 'GK' && R.gkPassingFromPrice) { attrs.passing = priceLevel; estimated.push('passing'); }
 
       // Pace (estimated).
@@ -151,11 +176,10 @@ export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DE
       return { p, age, ageUsed, mins, priceLevel, attrs, raw, estimated };
     });
 
-    // Stretch the overall around the position average.
-    const posMean = rated.reduce((s, r) => s + r.raw, 0) / rated.length;
+    // Overall: compare each player's weighted average with regular players in the same position.
+    const rawPool = rated.filter((r) => r.mins >= R.poolMinMinutes[pos]).map((r) => r.raw).sort((a, b) => a - b);
     for (const r of rated) {
-      const stretched = posMean + (r.raw - posMean) * R.overallStretch;
-      const overall = clamp((1 - R.overallPriceBlend) * stretched + R.overallPriceBlend * r.priceLevel, R.scale.min, R.scale.max);
+      const overall = clamp((1 - R.overallPriceBlend) * curve(percentile(rawPool, r.raw)) + R.overallPriceBlend * r.priceLevel, R.scale.min, R.scale.max);
 
       const jitter = (hash01(r.p.code ?? r.p.id) * 2 - 1) * R.potentialJitter;
       const potential = clamp(Math.max(overall, overall + lookup(R.potentialAgeBonus, r.ageUsed) + jitter), R.scale.min, R.scale.max);
