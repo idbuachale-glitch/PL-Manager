@@ -28,6 +28,7 @@ export async function loadData() {
     const saved = localStorage.getItem(SAVE_KEY);
     if (saved) game = JSON.parse(saved);
     if (game && !game.board) { game.board = makeBoard(game.userClub); game.welcomed = true; }
+    if (game) syncSquads();
     // Bring hand-set positions from the latest data into older saves.
     if (game) for (const p of data.players) if (p.positions && game.players[p.id]) game.players[p.id].positions = p.positions;
   } catch { game = null; }
@@ -160,4 +161,35 @@ function updateBoard(f, r) {
   const target = BOARD_GOALS[b.goal].target;
   if (game.gw > 6) d += pos <= target ? 1 : -1;
   b.confidence = Math.max(0, Math.min(100, b.confidence + d));
+}
+
+// Keep a save's squads in line with the latest real-world data: players who have left the
+// Premier League are removed, new signings join their club, and moves between clubs follow.
+function syncSquads() {
+  const fresh = new Map(data.players.map((p) => [p.id, p]));
+  let changed = false;
+  for (const [id, p] of Object.entries(game.players)) {
+    const f = fresh.get(Number(id));
+    if (!f) {
+      delete game.players[id];
+      changed = true;
+    } else if (f.teamCode !== p.teamCode) {
+      p.teamCode = f.teamCode; p.teamShort = f.teamShort; changed = true;
+    }
+  }
+  for (const f of data.players) {
+    if (!game.players[f.id] && game.clubs[f.teamCode]) {
+      game.players[f.id] = {
+        ...f,
+        dyn: { condition: 100, form: 6.5, injuredFor: 0, suspendedFor: 0, seasonYellows: 0 },
+        season: { apps: 0, starts: 0, minutes: 0, goals: 0, assists: 0, cleanSheets: 0, yellows: 0, reds: 0, ratingSum: 0, motm: 0 },
+      };
+      changed = true;
+    }
+  }
+  if (!changed) return;
+  for (const c of Object.values(game.clubs)) c.playerIds = [];
+  for (const p of Object.values(game.players)) game.clubs[p.teamCode]?.playerIds.push(p.id);
+  if (game.user?.lineup) game.user.lineup.ids = game.user.lineup.ids.map((id) => (game.players[id] ? id : null));
+  save();
 }

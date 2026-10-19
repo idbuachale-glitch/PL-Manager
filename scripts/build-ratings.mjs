@@ -25,10 +25,15 @@ for (const p of players) {
   p.potential = Math.max(p.potential, p.overall);
   if (o.overall != null || o.attrs) p.estimated = [...p.estimated, 'manual'];
 }
-await writeFile(new URL('players.json', DATA), JSON.stringify(players));
+// Players FPL marks as 'u' (left the club, moved abroad or out on loan) still count toward the
+// rating scales above, but are left out of the game's squads.
+const leavers = players.filter((p) => p.status === 'u');
+const inGame = players.filter((p) => p.status !== 'u');
+await writeFile(new URL('players.json', DATA), JSON.stringify(inGame));
+console.error(`Left out ${leavers.length} players who have left their clubs.`);
 
 const sample = Object.entries(SAMPLE).flatMap(([pos, n]) =>
-  players.filter((p) => p.pos === pos).sort((a, b) => b.price - a.price || b.overallExact - a.overallExact).slice(0, n));
+  inGame.filter((p) => p.pos === pos).sort((a, b) => b.price - a.price || b.overallExact - a.overallExact).slice(0, n));
 
 const rows = sample.map((p) => {
   const a = p.attrs;
@@ -47,7 +52,7 @@ const md = [
   '|---|---|---|---|---|---|---|---|---|---|---|---|',
   ...rows,
   '',
-  `Rated ${players.length} players. ${players.filter((p) => p.estimated.includes('all')).length} had no Premier League stats last season. `
+  `Rated ${inGame.length} players in squads. ${players.filter((p) => p.estimated.includes('all')).length} had no Premier League stats last season. `
     + `${players.filter((p) => p.estimated.includes('age')).length} had no birth date (age set to 26).`,
 ].join('\n');
 

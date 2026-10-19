@@ -31,9 +31,9 @@ All ratings are out of 20, FM style. Atk = Attack (Goalkeeping for keepers), Pas
 | Haaland | MCI | FWD | 26 | **20** | 18 | 11 | 6 | 16 | 18 | 2953 | £160m |
 | Isak | LIV | FWD | 26 | **18** | 16 | 13 | 9 | 14 | 10 | 694 | £46m |
 | Thiago | BRE | FWD | 25 | **18** | 15 | 10 | 8 | 16 | 18 | 3282 | £33.5m |
-| Watkins | AVL | FWD | 30 | **18** | 15 | 10 | 6 | 15 | 17 | 2833 | £22.5m |
 | Ekitiké | LIV | FWD | 24 | **19** | 15 | 12 | 7 | 16 | 14 | 1797 | £33m |
 | João Pedro | CHE | FWD | 24 | **19** | 15 | 12 | 7 | 16 | 17 | 2658 | £32.5m |
 | Havertz | ARS | FWD | 27 | **19** | 16 | 13 | 9 | 14 | 10 | 577 | £28.5m |
+| Gyökeres | ARS | FWD | 28 | **18** | 15 | 11 | 6 | 15 | 16 | 2217 | £22m |
 
-Rated 668 players. 259 had no Premier League stats last season. 15 had no birth date (age set to 26).
+Rated 563 players in squads. 259 had no Premier League stats last season. 15 had no birth date (age set to 26).
