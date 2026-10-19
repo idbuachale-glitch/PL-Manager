@@ -90,14 +90,15 @@ export function applyResult(state, f, result) {
     if (result.motm === r.id) s.motm++;
     d.condition = r.condition;
     d.form = (1 - SEASON.formWeight) * d.form + SEASON.formWeight * r.rating;
-    if (r.injured) d.injuredFor = rng.weighted(SEASON.injuryWeeks, () => 1);
+    if (r.injured) { d.injuredFor = rng.weighted(SEASON.injuryWeeks, () => 1); d.fresh = true; }
     if (r.red) {
       s.reds++;
       d.suspendedFor += r.yellow >= 2 ? SEASON.secondYellowBan : SEASON.straightRedBan;
+      d.fresh = true;
     } else if (r.yellow) {
       d.seasonYellows += r.yellow;
       const ban = SEASON.yellowBans[d.seasonYellows];
-      if (ban) d.suspendedFor += ban;
+      if (ban) { d.suspendedFor += ban; d.fresh = true; }
     }
   }
 }
@@ -107,6 +108,8 @@ export function advanceWeek(state, playedCodes) {
   for (const p of Object.values(state.players)) {
     const d = p.dyn;
     d.condition = Math.min(100, d.condition + SEASON.recoveryPerWeek);
+    // Injuries and bans picked up this week start counting from next week.
+    if (d.fresh) { d.fresh = false; continue; }
     if (d.injuredFor > 0) d.injuredFor--;
     if (d.suspendedFor > 0 && playedCodes.has(p.teamCode)) d.suspendedFor--;
   }

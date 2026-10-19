@@ -53,7 +53,7 @@ export function Squad(rerender) {
 
   return h('main', { class: 'screen squad' },
     h('header', { class: 'bar' },
-      h('h1', null, 'Squad'),
+      h('h1', null, 'Squad', h('span', { class: 'sub' }, `${userSquad().length} players, ${userSquad().filter((p) => !isAvailable(p)).length} unavailable`)),
       h('span', { class: 'chip-static' }, formation),
       h('button', { class: 'btn-small', onClick: () => { ui.squadPick = null; bestXI(); rerender(); } }, 'Best XI')),
 
@@ -74,9 +74,9 @@ export function Squad(rerender) {
       })),
 
     pick != null
-      ? h('p', { class: 'pick-hint' }, `Choose a player for ${SLOT_NAMES[lu.slots[pick].slot]}. Best fits are listed first.`,
+      ? h('p', { class: 'pick-hint active' }, `Now pick who plays ${SLOT_NAMES[lu.slots[pick].slot]}. Best fits are at the top.`,
         h('button', { class: 'link', onClick: () => { ui.squadPick = null; rerender(); } }, 'Cancel'))
-      : h('p', { class: 'pick-hint muted' }, 'Tap a spot on the pitch to change who plays there. Tap a player for details.'),
+      : h('p', { class: 'pick-hint muted' }, 'Tap a shirt on the pitch to swap that player. Tap anyone below to see their profile.'),
 
     h('div', { class: 'filters' },
       h('div', { class: 'chips', role: 'group', 'aria-label': 'Filter by position' },

@@ -5,6 +5,7 @@ export { squadOf };
 import { pickLineup } from '../engine/lineup.js';
 import { PRESETS } from '../engine/tactics.js';
 import { makeNews } from './lib/news.js';
+import { squadStrength } from '../engine/ai.js';
 
 const SAVE_KEY = 'plm.save.1';
 const listeners = new Set();
@@ -26,6 +27,7 @@ export async function loadData() {
   try {
     const saved = localStorage.getItem(SAVE_KEY);
     if (saved) game = JSON.parse(saved);
+    if (game && !game.board) { game.board = makeBoard(game.userClub); game.welcomed = true; }
   } catch { game = null; }
 }
 
@@ -38,6 +40,8 @@ export function newGame(userClub, difficulty = 'normal') {
   game.user = { tactics: { ...PRESETS.Balanced }, lineup: null };
   game.news = makeNews(game, null);
   game.prevPositions = {};
+  game.board = makeBoard(userClub);
+  game.lastResult = null;
   autoPickUserXI();
   ui.tab = 'home';
   save(); notify();
@@ -98,6 +102,8 @@ export function playNextMatch() {
   advanceWeek(game, played);
   // Keep the saved XI but drop anyone now injured or banned (they get auto-replaced at kick-off).
   game.news = [...makeNews(game, { fixture: f, result, others }), ...game.news].slice(0, 30);
+  updateBoard(f, result);
+  game.lastResult = { fixture: f, result, others };
   save(); notify();
   return { fixture: f, result, others };
 }
@@ -110,4 +116,46 @@ export function simRestOfSeason() {
     else { playGameweek(game); }
   }
   save(); notify();
+}
+
+// ----- Tactics -----
+export function setTactics(t) { game.user.tactics = { ...game.user.tactics, ...t }; save(); notify(); }
+export function setFormation(formation) {
+  const lu = pickLineup(userSquad(), formation, { rotation: 1 });
+  game.user.lineup = { formation, ids: lu.slots.map((s) => s.player?.id ?? null) };
+  save(); notify();
+}
+
+// ----- Board -----
+export const BOARD_GOALS = {
+  title: { text: 'Win the league', target: 1 },
+  top4: { text: 'Finish in the top four', target: 4 },
+  europe: { text: 'Finish in the top seven', target: 7 },
+  mid: { text: 'Finish in the top half', target: 10 },
+  survive: { text: 'Avoid relegation', target: 17 },
+};
+
+function makeBoard(code) {
+  const ranked = data.clubs.map((c) => [c.code, squadStrength(data.players.filter((p) => p.teamCode === c.code))])
+    .sort((a, b) => b[1] - a[1]).map(([c]) => c);
+  const rank = ranked.indexOf(code) + 1;
+  const goal = rank <= 2 ? 'title' : rank <= 5 ? 'top4' : rank <= 8 ? 'europe' : rank <= 13 ? 'mid' : 'survive';
+  return { goal, rank, confidence: 65 };
+}
+
+function updateBoard(f, r) {
+  const b = game.board;
+  if (!b) return;
+  const home = f.home === game.userClub;
+  const us = home ? r.homeGoals : r.awayGoals, them = home ? r.awayGoals : r.homeGoals;
+  const oppRank = (() => {
+    const ranked = Object.keys(game.clubs).map((c) => [c, squadStrength(squadOf(game, Number(c)))]).sort((a, c) => c[1] - a[1]).map(([c]) => Number(c));
+    return ranked.indexOf(home ? f.away : f.home) + 1;
+  })();
+  const favourite = b.rank < oppRank;
+  let d = us > them ? (favourite ? 3 : 6) : us < them ? (favourite ? -6 : -3) : (favourite ? -1 : 2);
+  const pos = positions()[game.userClub];
+  const target = BOARD_GOALS[b.goal].target;
+  if (game.gw > 6) d += pos <= target ? 1 : -1;
+  b.confidence = Math.max(0, Math.min(100, b.confidence + d));
 }

@@ -10,8 +10,8 @@ const VIEWS = { table: 'Table', stats: 'Stats', fixtures: 'Fixtures' };
 
 export function League(rerender) {
   return h('main', { class: 'screen league' },
-    h('header', { class: 'bar' }, h('h1', null, 'League')),
-    h('div', { class: 'seg wide', role: 'tablist' },
+    h('header', { class: 'bar' }, h('h1', null, 'League', h('span', { class: 'sub' }, game.gw > game.maxGw ? 'Final standings' : `After gameweek ${Math.max(0, game.gw - 1)}`))),
+    h('div', { class: 'seg', role: 'tablist' },
       Object.entries(VIEWS).map(([k, v]) => h('button', {
         class: cx('seg-btn', ui.leagueView === k && 'on'), role: 'tab', 'aria-selected': ui.leagueView === k ? 'true' : 'false',
         onClick: () => { ui.leagueView = k; rerender(); },
@@ -22,7 +22,7 @@ export function League(rerender) {
 function TableView(rerender) {
   const t = table(game);
   const prev = game.prevPositions ?? {};
-  return h('div', null,
+  return h('div', { class: 'stack' },
     h('div', { class: 'tbl', role: 'table', 'aria-label': 'League table' },
       h('div', { class: 'tr th', role: 'row' },
         h('span', { class: 'c-pos' }, '#'), h('span', { class: 'c-club' }, 'Club'),
@@ -53,14 +53,14 @@ function StatsView(rerender) {
           h('span', { class: 'l-name' }, p.webName),
           h('span', { class: 'l-val' }, p.season[key], h('span', { class: 'muted small' }, ` ${unit}`)))))) : h('p', { class: 'muted' }, 'No games played yet.'));
   };
-  return h('div', null, list('Top scorers', 'goals', 'goals'), list('Assists', 'assists', 'assists'), list('Clean sheets', 'cleanSheets', 'clean sheets'));
+  return h('div', { class: 'stack' }, list('Top scorers', 'goals', 'goals'), list('Assists', 'assists', 'assists'), list('Clean sheets', 'cleanSheets', 'clean sheets'));
 }
 
 function FixturesView(rerender) {
   const gw = ui.fixturesGw ?? Math.min(game.gw, game.maxGw);
   const list = game.fixtures.filter((f) => f.gw === gw);
   const go = (d) => { ui.fixturesGw = Math.max(1, Math.min(game.maxGw, gw + d)); rerender(); };
-  return h('div', null,
+  return h('div', { class: 'stack' },
     h('div', { class: 'gw-step' },
       h('button', { class: 'btn-icon', onClick: () => go(-1), disabled: gw <= 1, 'aria-label': 'Previous gameweek' }, '‹'),
       h('span', { class: 'gw-label' }, `Gameweek ${gw}`),

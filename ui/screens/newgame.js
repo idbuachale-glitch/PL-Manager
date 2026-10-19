@@ -20,7 +20,7 @@ export function NewGame(rerender) {
   return h('main', { class: 'newgame' },
     h('header', { class: 'ng-head' },
       h('h1', { class: 'wordmark' }, 'PL Manager'),
-      h('p', { class: 'muted' }, 'Premier League 2026/27. Pick your club.')),
+      h('p', { class: 'muted' }, 'Premier League 2026/27. Which club do you want to manage?')),
     h('ul', { class: 'club-grid' },
       clubs.map((c) => h('li', null,
         h('button', {

@@ -6,14 +6,9 @@ import { NewGame } from './screens/newgame.js';
 import { Home } from './screens/home.js';
 import { Squad } from './screens/squad.js';
 import { League } from './screens/league.js';
+import { Tactics } from './screens/tactics.js';
+import { Icon as LineIcon } from './components/icons.js';
 
-const ICONS = {
-  home: 'M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z',
-  squad: 'M8.5 4 5 6 3 10l3 1.5V20h12v-8.5L21 10l-2-4-3.5-2a3.5 3.5 0 0 1-7 0z',
-  tactics: 'M4 4h16v16H4zM12 4v16M4 12h4M16 12h4M9 17l2-2M13 15l2 2M15 7l-3 3',
-  transfers: 'M5 8h12l-3-3M19 16H7l3 3',
-  league: 'M5 5h14M5 9.5h14M5 14h14M5 18.5h9',
-};
 const TABS = [
   ['home', 'Home'], ['squad', 'Squad'], ['tactics', 'Tactics'], ['transfers', 'Transfers'], ['league', 'League'],
 ];
@@ -21,11 +16,7 @@ const TABS = [
 const root = document.getElementById('app');
 const scrollMemory = {};
 
-function Icon(name) {
-  const svg = h('svg', { viewBox: '0 0 24 24', width: 24, height: 24, 'aria-hidden': 'true', fill: 'none', stroke: 'currentColor', 'stroke-width': 1.8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
-  svg.append(h('path', { svg: true, d: ICONS[name] }));
-  return svg;
-}
+const Icon = (name) => LineIcon(name, 24, 'tab-ic');
 
 function Placeholder(title, text) {
   return h('main', { class: 'screen' },
@@ -50,8 +41,8 @@ export function render() {
   const screens = {
     home: () => Home(render),
     squad: () => Squad(render),
-    tactics: () => Placeholder('Tactics', 'Formations, the four tactic sliders and presets arrive in the next update. Your team plays a balanced style for now.'),
-    transfers: () => Placeholder('Transfers', 'Buying and selling between Premier League clubs arrives in a later update.'),
+    tactics: () => Tactics(render),
+    transfers: () => Placeholder('Transfers', 'Buying and selling players between Premier League clubs is coming soon. For now, make the most of the squad you have.'),
     league: () => League(render),
   };
   root.dataset.tab = ui.tab;
