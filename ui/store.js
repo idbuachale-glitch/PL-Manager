@@ -28,6 +28,8 @@ export async function loadData() {
     const saved = localStorage.getItem(SAVE_KEY);
     if (saved) game = JSON.parse(saved);
     if (game && !game.board) { game.board = makeBoard(game.userClub); game.welcomed = true; }
+    // Bring hand-set positions from the latest data into older saves.
+    if (game) for (const p of data.players) if (p.positions && game.players[p.id]) game.players[p.id].positions = p.positions;
   } catch { game = null; }
 }
 

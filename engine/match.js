@@ -10,6 +10,7 @@
 import { MATCH as DEFAULT_MATCH } from './config.js';
 import { makeRng } from './rng.js';
 import { normTactics, shape } from './tactics.js';
+import { familiarity } from './positions.js';
 
 const SLOT_UNITS = {
   //       attack creation control defence
@@ -65,7 +66,8 @@ export function createMatch({ home, away, seed = 1, config = DEFAULT_MATCH, neut
   const eff = (x, key) => {
     const base = x.player.attrs[key] ?? 6;
     const formBonus = clamp(((x.player.dyn?.form ?? 6.5) - 6.5) * 0.4, -0.8, 0.8);
-    return (base + formBonus) * (1 - C.conditionEffect * (1 - x.st.condition / 100));
+    // Out of position = plays below his ratings (see engine/positions.js).
+    return (base + formBonus) * familiarity(x.player, x.slot) * (1 - C.conditionEffect * (1 - x.st.condition / 100));
   };
 
   function units(k) {

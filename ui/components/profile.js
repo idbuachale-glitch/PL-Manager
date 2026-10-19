@@ -2,6 +2,7 @@
 
 import { h } from '../dom.js';
 import { Crest, Attr, FitnessBar, FormArrow, money, attrClass } from './common.js';
+import { positionsOf, SLOT_LABEL } from '../../engine/positions.js';
 
 const ATTR_LABELS = {
   attack: 'Attack', goalkeeping: 'Goalkeeping', passing: 'Passing', defending: 'Defending', pace: 'Pace', stamina: 'Stamina',
@@ -23,7 +24,10 @@ export function PlayerProfile(p) {
       Crest(p.teamCode, 44),
       h('div', { class: 'profile-id' },
         h('h2', null, p.name),
-        h('p', { class: 'muted' }, `${ROLE_LABELS[p.role] ?? p.pos}, age ${p.age}`)),
+        h('p', { class: 'muted' }, `${SLOT_LABEL[positionsOf(p).natural[0]] ?? ROLE_LABELS[p.role] ?? p.pos}, age ${p.age}`),
+        h('div', { class: 'positions' },
+          positionsOf(p).natural.map((x) => h('span', { class: 'pos-tag', title: `${SLOT_LABEL[x]} (natural)` }, x)),
+          positionsOf(p).secondary.map((x) => h('span', { class: 'pos-tag sec', title: `${SLOT_LABEL[x]} (can play)` }, x)))),
       h('div', { class: 'profile-ovr' }, Attr(p.overall, 'attr-xl'), h('span', { class: 'muted small' }, 'Overall'))),
 
     h('div', { class: 'profile-meta' },

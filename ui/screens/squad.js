@@ -5,15 +5,20 @@ import { game, ui, userSquad, userLineup, userFormation, placeInSlot, bestXI } f
 import { Crest, Attr, FitnessBar, FormArrow, StatusIcon, Sheet } from '../components/common.js';
 import { PlayerProfile } from '../components/profile.js';
 import { slotScore, isAvailable } from '../../engine/lineup.js';
+import { familiarity, fitLevel, positionsOf, SLOT_LABEL } from '../../engine/positions.js';
+
+export const slotRating = (p, slot) => Math.max(1, Math.round((p.overallExact ?? p.overall) * familiarity(p, slot)));
+export const posText = (p) => { const q = positionsOf(p); return [...q.natural, ...q.secondary.map((x) => x.toLowerCase())].join(' '); };
+const FIT_TEXT = { natural: 'Natural position', secondary: 'Can play here', unfamiliar: 'Out of position', wrong: 'Badly out of position' };
 
 // Spot on the pitch for each slot, per formation: [x%, y%] with y=0 at the opponent's goal.
-const BACK4 = [[50, 91], [12, 70], [37, 75], [63, 75], [88, 70]];
+const BACK4 = [[50, 92], [12, 68], [36, 73], [64, 73], [88, 68]];
 export const PITCH = {
-  '4-3-3': [...BACK4, [50, 57], [27, 45], [73, 45], [15, 21], [50, 13], [85, 21]],
-  '4-2-3-1': [...BACK4, [34, 57], [66, 57], [15, 33], [50, 36], [85, 33], [50, 13]],
-  '4-4-2': [...BACK4, [12, 44], [37, 50], [63, 50], [88, 44], [35, 15], [65, 15]],
-  '3-5-2': [[50, 91], [24, 74], [50, 77], [76, 74], [10, 47], [30, 45], [50, 57], [70, 45], [90, 47], [35, 15], [65, 15]],
-  '5-3-2': [[50, 91], [8, 61], [28, 74], [50, 77], [72, 74], [92, 61], [27, 45], [50, 54], [73, 45], [35, 15], [65, 15]],
+  '4-3-3': [...BACK4, [50, 53], [27, 41], [73, 41], [15, 20], [50, 12], [85, 20]],
+  '4-2-3-1': [...BACK4, [32, 54], [68, 54], [14, 32], [50, 34], [86, 32], [50, 12]],
+  '4-4-2': [...BACK4, [12, 42], [37, 47], [63, 47], [88, 42], [35, 14], [65, 14]],
+  '3-5-2': [[50, 92], [22, 71], [50, 73], [78, 71], [10, 47], [30, 45], [50, 57], [70, 45], [90, 47], [35, 15], [65, 15]],
+  '5-3-2': [[50, 92], [9, 58], [29, 71], [50, 73], [71, 71], [91, 58], [27, 45], [50, 54], [73, 45], [35, 15], [65, 15]],
 };
 const SLOT_NAMES = { GK: 'GK', CB: 'CB', FB: 'FB', WB: 'WB', DM: 'DM', CM: 'CM', AM: 'AM', W: 'W', ST: 'ST' };
 const POS_ORDER = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
@@ -62,13 +67,15 @@ export function Squad(rerender) {
       lu.slots.map((s, i) => {
         const [x, y] = PITCH[formation][i];
         const p = s.player;
+        const lvl = p ? fitLevel(p, s.slot) : null;
         return h('button', {
-          class: cx('token', pick === i && 'picked', p && !isAvailable(p) && 'unavail', !p && 'empty'),
+          class: cx('token', p && `fit-${lvl}`, pick === i && 'picked', p && !isAvailable(p) && 'unavail', !p && 'empty'),
           style: { left: `${x}%`, top: `${y}%` },
           onClick: () => { ui.squadPick = pick === i ? null : i; rerender(); },
-          'aria-label': `${SLOT_NAMES[s.slot]}: ${p ? p.webName : 'empty'}`,
+          'aria-label': `${SLOT_NAMES[s.slot]}: ${p ? `${p.webName}, ${FIT_TEXT[lvl].toLowerCase()}` : 'empty'}`,
         },
-        p ? Attr(p.overall, 'token-ovr') : h('span', { class: 'attr a-low token-ovr' }, '+'),
+        h('span', { class: 'token-slot' }, s.slot),
+        p ? Attr(slotRating(p, s.slot), 'token-ovr') : h('span', { class: 'attr a-low token-ovr' }, '+'),
         h('span', { class: 'token-name' }, p ? p.webName : SLOT_NAMES[s.slot]),
         p ? h('span', { class: 'token-fit' }, h('span', { style: { width: `${p.dyn.condition}%` }, class: p.dyn.condition < 75 ? 'low' : '' })) : null);
       })),
@@ -76,7 +83,11 @@ export function Squad(rerender) {
     pick != null
       ? h('p', { class: 'pick-hint active' }, `Now pick who plays ${SLOT_NAMES[lu.slots[pick].slot]}. Best fits are at the top.`,
         h('button', { class: 'link', onClick: () => { ui.squadPick = null; rerender(); } }, 'Cancel'))
-      : h('p', { class: 'pick-hint muted' }, 'Tap a shirt on the pitch to swap that player. Tap anyone below to see their profile.'),
+      : h('p', { class: 'pick-hint muted' }, 'Tap a shirt on the pitch to swap that player. Numbers on the pitch are ratings in that position.'),
+    h('div', { class: 'fit-key small' },
+      h('span', null, h('i', { class: 'fk fit-natural' }), 'Natural'),
+      h('span', null, h('i', { class: 'fk fit-secondary' }), 'Can play'),
+      h('span', null, h('i', { class: 'fk fit-unfamiliar' }), 'Out of position')),
 
     h('div', { class: 'filters' },
       h('div', { class: 'chips', role: 'group', 'aria-label': 'Filter by position' },
@@ -85,14 +96,18 @@ export function Squad(rerender) {
         h('select', { onChange: (e) => { ui.squadSort = e.target.value; rerender(); } },
           Object.entries(SORTS).map(([k, v]) => h('option', { value: k, selected: ui.squadSort === k }, v))))),
 
-    h('ul', { class: 'player-list' }, players.map((p) => h('li', null,
+    h('ul', { class: 'player-list' }, players.map((p) => {
+      const pickSlot = pick != null ? lu.slots[pick].slot : null;
+      const lvl = pickSlot ? fitLevel(p, pickSlot) : null;
+      return h('li', null,
       h('button', { class: cx('prow', inXI.has(p.id) && 'in-xi', !isAvailable(p) && 'unavail'), onClick: () => onRow(p) },
-        Attr(p.overall, 'prow-ovr'),
+        pickSlot ? Attr(slotRating(p, pickSlot), 'prow-ovr') : Attr(p.overall, 'prow-ovr'),
         h('span', { class: 'prow-main' },
           h('span', { class: 'prow-name' }, p.webName, StatusIcon(p)),
           h('span', { class: 'prow-sub muted small' },
             inXI.has(p.id) ? h('span', { class: 'xi-tag' }, SLOT_NAMES[lu.slots[inXI.get(p.id)].slot]) : null,
-            `${p.pos}, age ${p.age}`)),
+            pickSlot ? h('span', { class: `fit-label fl-${lvl}` }, FIT_TEXT[lvl]) : `${posText(p)}, age ${p.age}`)),
         FormArrow(p.dyn.form),
-        FitnessBar(p.dyn.condition))))));
+        FitnessBar(p.dyn.condition)));
+    })));
 }

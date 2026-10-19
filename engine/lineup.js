@@ -2,14 +2,14 @@
 // A player object is the rated player from data/players.json, optionally with `dyn`
 // (live state: condition 0–100, form, injured/suspended counters).
 
-import { FORMATIONS, SLOT_FIT, SLOT_WEIGHTS } from './tactics.js';
+import { FORMATIONS, SLOT_WEIGHTS } from './tactics.js';
+import { familiarity } from './positions.js';
 
 export const isAvailable = (p) => !(p.dyn?.injuredFor > 0) && !(p.dyn?.suspendedFor > 0);
 
-// How good a player is in a slot, ignoring fitness.
+// How good a player is in a slot (abilities that matter there x position familiarity), ignoring fitness.
 export function slotScore(p, slot) {
-  const fit = SLOT_FIT[slot][p.pos] ?? 0;
-  if (!fit) return 0;
+  const fit = familiarity(p, slot);
   const w = SLOT_WEIGHTS[slot];
   let s = 0, ws = 0;
   for (const [k, wt] of Object.entries(w)) { s += wt * (p.attrs[k] ?? 6); ws += wt; }
@@ -61,7 +61,7 @@ export function pickLineup(squad, formation, { rotation = 1, locked = [] } = {})
   };
 }
 
-const candidates = (pool, slot) => pool.filter((p) => (SLOT_FIT[slot][p.pos] ?? 0) >= 0.9);
+const candidates = (pool, slot) => pool.filter((p) => familiarity(p, slot) >= 0.95);
 const benchValue = (p) => p.overall + (p.dyn?.condition ?? 100) / 50;
 
 // Sum of slot scores, used to choose a formation that suits the squad.

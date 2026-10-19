@@ -21,8 +21,9 @@ for (const p of players) {
   if (!o) continue;
   if (o.attrs) Object.assign(p.attrs, o.attrs);
   if (o.overall != null) { p.overall = o.overall; p.overallExact = o.overall; }
+  if (o.positions) p.positions = o.positions;
   p.potential = Math.max(p.potential, p.overall);
-  p.estimated = [...p.estimated, 'manual'];
+  if (o.overall != null || o.attrs) p.estimated = [...p.estimated, 'manual'];
 }
 await writeFile(new URL('players.json', DATA), JSON.stringify(players));
 
