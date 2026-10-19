@@ -8,6 +8,8 @@ import { makeNews } from './lib/news.js';
 import { squadStrength } from '../engine/ai.js';
 
 const SAVE_KEY = 'plm.save.1';
+// Bump when ratings are rebuilt in a way older saves should pick up.
+const RATINGS_VERSION = 2;
 const listeners = new Set();
 
 export const data = { players: [], clubs: [], fixtures: [], clubByCode: new Map() };
@@ -41,6 +43,7 @@ export const club = (code) => data.clubByCode.get(code);
 export function newGame(userClub, difficulty = 'normal') {
   game = createSeason({ players: data.players, clubs: data.clubs, fixtures: data.fixtures, seed: Date.now() % 1e9, userClub });
   game.difficulty = difficulty;
+  game.ratingsVersion = RATINGS_VERSION;
   game.user = { tactics: { ...PRESETS.Balanced }, lineup: null };
   game.news = makeNews(game, null);
   game.prevPositions = {};
@@ -187,6 +190,15 @@ function syncSquads() {
       };
       changed = true;
     }
+  }
+  if ((game.ratingsVersion ?? 1) < RATINGS_VERSION) {
+    for (const [id, p] of Object.entries(game.players)) {
+      const f = fresh.get(Number(id));
+      if (!f) continue;
+      for (const k of ['attrs', 'overall', 'overallExact', 'role', 'value', 'potential', 'estimated', 'positions']) p[k] = f[k];
+    }
+    game.ratingsVersion = RATINGS_VERSION;
+    changed = true;
   }
   if (!changed) return;
   for (const c of Object.values(game.clubs)) c.playerIds = [];

@@ -403,7 +403,10 @@ select { background: var(--surface); border: 0; border-radius: 10px; padding: 8p
 .token.fit-secondary { border-color: rgba(255, 201, 77, 0.75); }
 .token.fit-unfamiliar, .token.fit-wrong { border-color: var(--red); background: rgba(70, 24, 22, 0.92); }
 .token.picked { border-color: var(--chalk); box-shadow: 0 0 0 3px var(--amber); }
-.fit-key { display: flex; gap: 14px; color: var(--muted); padding: 0 4px; }
+.keys { display: grid; gap: 6px; padding: 0 4px; }
+.fit-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; color: var(--muted); }
+.fit-key .attr { font-size: 15px; margin-right: -6px; }
+.key-title { font-weight: 600; color: var(--chalk); min-width: 74px; }
 .fit-key span { display: inline-flex; align-items: center; gap: 6px; }
 .fk { width: 12px; height: 12px; border-radius: 4px; border: 2px solid; }
 .fk.fit-natural { border-color: var(--grass); } .fk.fit-secondary { border-color: var(--amber); } .fk.fit-unfamiliar { border-color: var(--red); }

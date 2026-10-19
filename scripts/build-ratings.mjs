@@ -3,7 +3,7 @@
 // Run with: node scripts/build-ratings.mjs   (no internet needed)
 
 import { readFile, writeFile } from 'node:fs/promises';
-import { buildRatings } from '../engine/ratings.js';
+import { buildRatings, overallFromAttrs } from '../engine/ratings.js';
 
 const DATA = new URL('../data/', import.meta.url);
 const SEASON_START = '2026-08-21';       // ages are worked out on the first day of the season
@@ -19,11 +19,14 @@ try { overrides = JSON.parse(await readFile(new URL('rating-overrides.json', DAT
 for (const p of players) {
   const o = overrides[String(p.code)];
   if (!o) continue;
-  if (o.attrs) Object.assign(p.attrs, o.attrs);
-  if (o.overall != null) { p.overall = o.overall; p.overallExact = o.overall; }
+  if (o.attrs) {
+    Object.assign(p.attrs, o.attrs);
+    const ov = overallFromAttrs(p);          // overall always follows the abilities
+    p.overall = Math.round(ov.exact); p.overallExact = ov.exact; p.role = ov.role;
+  }
   if (o.positions) p.positions = o.positions;
   p.potential = Math.max(p.potential, p.overall);
-  if (o.overall != null || o.attrs) p.estimated = [...p.estimated, 'manual'];
+  if (o.attrs) p.estimated = [...p.estimated, 'manual'];
 }
 // Players FPL marks as 'u' (left the club, moved abroad or out on loan) still count toward the
 // rating scales above, but are left out of the game's squads.

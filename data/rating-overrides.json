@@ -1,9 +1,8 @@
 {
-  "note": "Hand corrections that replace the formula. Keyed by FPL player code (stable across seasons). Any field left out keeps the formula's value. 'positions' sets natural and secondary positions (GK, CB, FB, WB, DM, CM, AM, W, ST) for players the stats can't place. Edit freely.",
+  "note": "Hand corrections that replace the formula. Keyed by FPL player code (stable across seasons). Any field left out keeps the formula's value. 'positions' sets natural and secondary positions (GK, CB, FB, WB, DM, CM, AM, W, ST) for players the stats can't place. Edit freely. Overall is always worked out from the abilities, so to change a player's overall, change his abilities.",
   "players": {
     "491279": {
       "name": "Van de Ven",
-      "overall": 17,
       "attrs": {
         "defending": 15,
         "pace": 18
@@ -11,7 +10,6 @@
     },
     "221632": {
       "name": "Romero",
-      "overall": 17,
       "attrs": {
         "defending": 15,
         "passing": 12
@@ -19,7 +17,6 @@
     },
     "243016": {
       "name": "Mac Allister",
-      "overall": 17,
       "attrs": {
         "passing": 15,
         "defending": 13,
@@ -28,7 +25,6 @@
     },
     "516895": {
       "name": "Mainoo",
-      "overall": 15,
       "attrs": {
         "passing": 14,
         "defending": 12
@@ -36,7 +32,6 @@
     },
     "97032": {
       "name": "Van Dijk",
-      "overall": 17,
       "attrs": {
         "defending": 16,
         "passing": 14
@@ -44,7 +39,6 @@
     },
     "116535": {
       "name": "Alisson",
-      "overall": 16,
       "attrs": {
         "goalkeeping": 16,
         "defending": 15
@@ -52,14 +46,12 @@
     },
     "209365": {
       "name": "De Ligt",
-      "overall": 15,
       "attrs": {
         "defending": 14
       }
     },
     "154566": {
       "name": "Solanke",
-      "overall": 15,
       "attrs": {
         "attack": 16
       }

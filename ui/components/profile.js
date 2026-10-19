@@ -43,6 +43,7 @@ export function PlayerProfile(p) {
         h('span', { class: 'attr-bar' }, h('span', { class: `attr-fill ${attrClass(p.attrs[k])}`, style: { width: `${(p.attrs[k] / 20) * 100}%` } })),
         Attr(p.attrs[k])))),
 
+    h('p', { class: 'note' }, `Overall ${p.overall} is his abilities averaged with the weights that matter for a ${(SLOT_LABEL[positionsOf(p).natural[0]] ?? 'player').toLowerCase()}.`),
     est.includes('all') ? h('p', { class: 'note' }, 'No Premier League minutes last season, so these ratings are estimated from price, position and age.') : null,
     est.includes('manual') ? h('p', { class: 'note' }, 'Ratings adjusted by hand.') : null,
 

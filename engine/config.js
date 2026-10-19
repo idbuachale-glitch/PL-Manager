@@ -27,9 +27,9 @@ export const RATINGS = {
   // Separate settings per ability, tuned so a typical Premier League striker has Attack ~14
   // and only the very best reach 19–20.
   sharedScale: {
-    attack: { centre: 9, perSd: 2.2 },
-    passing: { centre: 10, perSd: 2.6 },
-    defending: { centre: 10, perSd: 2.6 },
+    attack: { centre: 9.5, perSd: 2.9 },
+    passing: { centre: 10.5, perSd: 3.2 },
+    defending: { centre: 10.5, perSd: 3.2 },
   },
 
   // Stats behind each ability (all per 90 minutes unless marked as a rate).
@@ -54,7 +54,7 @@ export const RATINGS = {
 
   // Share of every stat-based ability taken from price, so one odd season can't
   // give a star a silly low number. Keepers get more, because their stats are noisier.
-  abilityPriceBlend: { outfield: 0.25, GK: 0.45 },
+  abilityPriceBlend: { outfield: 0.15, GK: 0.35 },
 
   // Free data only measures chance creation, not general passing, so centre-backs look worse
   // passers than they are. These are added to Passing by position.
@@ -98,6 +98,7 @@ export const RATINGS = {
   // Lift for players at stronger clubs, measured by the club's squad value (sum of the
   // 15 highest start-of-season FPL prices). Stronger squads make individual stats look worse
   // for some roles, and FM rates players at big clubs higher. In overall points per spread.
+  // Added to Attack, Passing, Defending and Goalkeeping (so it shows in the numbers you see).
   clubStrengthBonus: { squadSize: 15, perSd: 1.0, min: -1, max: 1.5 },
   // Overall scale for regular players (by percentile within position): the weakest regular
   // starter is about 9-10, a median one about 13, the best 19-20. Fringe players with few
@@ -130,19 +131,19 @@ export const MATCH = {
 
   // Possession: who has the ball each minute.
   possession: {
-    perControlPoint: 0.03,     // per point of midfield control difference
+    perControlPoint: 0.022,    // per point of midfield control difference
     perExtraCentralMid: 0.025, // formation matchup: extra body in central midfield
     patientTempo: 0.05, press: 0.03, narrow: 0.03,
     min: 0.28, max: 0.72,
   },
 
   // Chances: chance per minute of possession that the attack ends in a shot.
-  shotRate: 0.212,
-  qualitySensitivity: 0.075,    // per point of attack-vs-defence difference
+  shotRate: 0.198,
+  qualitySensitivity: 0.042,    // per point of attack-vs-defence difference
   shotRateMax: 0.6,
 
   // Shot quality (xG).
-  xg: { base: 0.1, sensitivity: 0.03, min: 0.02, max: 0.8 },
+  xg: { base: 0.1, sensitivity: 0.018, min: 0.02, max: 0.8 },
   finishingPerPoint: 0.04,     // shooter's Attack vs 13
   goalkeepingPerPoint: 0.05,   // keeper vs 12
   assistedShare: 0.8,

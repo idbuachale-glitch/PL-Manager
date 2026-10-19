@@ -62,6 +62,16 @@ function percentile(sortedPool, x) {
   return (below + equal / 2) / sortedPool.length;
 }
 
+// Overall = the player's abilities averaged with the weights for his best role (so it always adds up).
+export function overallFromAttrs(p, R = DEFAULT_RATINGS) {
+  let best = -Infinity, role = null;
+  for (const [name, ow] of Object.entries(R.overallRoles[p.pos])) {
+    const v = Object.entries(ow).reduce((s, [k, wt]) => s + wt * (p.attrs[k] ?? 6), 0) / Object.values(ow).reduce((a, b) => a + b, 0);
+    if (v > best) { best = v; role = name; }
+  }
+  return { exact: Math.round(best * 10) / 10, role };
+}
+
 export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DEFAULT_VALUE, referenceDate, teams = [] } = {}) {
   const R = ratings;
   const curve = (p) => clamp(R.curve.base + R.curve.range * clamp(p, 0, 1) ** R.curve.power, R.scale.min, R.scale.max);
@@ -167,7 +177,8 @@ export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DE
         if (tc !== null) attrs.defending += w * R.defenderTeamBonus.range * 2 * (percentile(teamBonusSorted, tc) - 0.5);
       }
       if (attrs.passing !== undefined) attrs.passing += R.passingBonus?.[pos] ?? 0;
-      for (const a of Object.keys(abilities)) attrs[a] = clamp(attrs[a], R.scale.min, R.scale.max);
+      const lift = clubLift(p.teamCode);
+      for (const a of Object.keys(abilities)) attrs[a] = clamp(attrs[a] + lift, R.scale.min, R.scale.max);
       if (pos === 'GK' && R.gkPassingFromPrice) { attrs.passing = priceLevel; estimated.push('passing'); }
 
       // Pace (estimated).
@@ -214,14 +225,18 @@ export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DE
       const val = base * lookup(V.ageFactor, r.ageUsed) * (1 + V.potentialFactorPerPoint * (potential - overall));
 
       const { stats, last, ...rest } = r.p;
+      // The shown overall is the weighted average of the rounded abilities (adds up exactly).
+      const roundedAttrs = Object.fromEntries(Object.entries(r.attrs).map(([k, v]) => [k, Math.round(v)]));
+      const shown = overallFromAttrs({ pos, attrs: roundedAttrs }, R);
+      const shownPotential = clamp(Math.max(shown.exact, shown.exact + lookup(R.potentialAgeBonus, r.ageUsed) + jitter), R.scale.min, R.scale.max);
       out.push({
         ...rest,
         age: r.ageUsed,
-        role: r.role,
-        attrs: Object.fromEntries(Object.entries(r.attrs).map(([k, v]) => [k, Math.round(v)])),
-        overall: Math.round(overall),
-        overallExact: Math.round(overall * 10) / 10,
-        potential: Math.round(potential),   // hidden in the app
+        role: shown.role,
+        attrs: roundedAttrs,
+        overall: Math.round(shown.exact),
+        overallExact: shown.exact,
+        potential: Math.round(shownPotential),   // hidden in the app
         value: Math.round(val / V.roundTo) * V.roundTo,
         minutesLastSeason: r.mins,
         lastSeason: last ?? null,
