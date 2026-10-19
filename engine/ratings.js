@@ -62,14 +62,28 @@ function percentile(sortedPool, x) {
   return (below + equal / 2) / sortedPool.length;
 }
 
-export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DEFAULT_VALUE, referenceDate } = {}) {
+export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DEFAULT_VALUE, referenceDate, teams = [] } = {}) {
   const R = ratings;
   const curve = (p) => clamp(R.curve.base + R.curve.range * clamp(p, 0, 1) ** R.curve.power, R.scale.min, R.scale.max);
   // Start-of-season price, so this season's real form doesn't creep into ratings.
-  const players = rawPlayers.map((p) => ({ ...p, price: p.priceStart ?? p.price, stats: deriveStats(p.last) }));
+  const players = rawPlayers.map((p) => {
+    const stats = deriveStats(p.last);
+    if (stats) stats.defcon_norm = stats.defensive_contribution === null ? null : stats.defensive_contribution / R.defconTarget[p.pos];
+    return { ...p, price: p.priceStart ?? p.price, stats };
+  });
+  // Club strength from squad value.
+  const squadValue = new Map();
+  for (const code of new Set(players.map((p) => p.teamCode))) {
+    const top = players.filter((p) => p.teamCode === code).map((p) => p.price).sort((a, b) => b - a).slice(0, R.clubStrengthBonus.squadSize);
+    squadValue.set(code, top.reduce((a, b) => a + b, 0));
+  }
+  const svStats = meanSd([...squadValue.values()]);
+  const clubLift = (code) => svStats && squadValue.has(code)
+    ? clamp(R.clubStrengthBonus.perSd * (squadValue.get(code) - svStats.mean) / svStats.sd, R.clubStrengthBonus.min, R.clubStrengthBonus.max)
+    : 0;
   const out = [];
 
-  const STAT_KEYS = [...PER90_STATS, 'clean_sheet_rate', 'goals_prevented', 'goals_conceded_low'];
+  const STAT_KEYS = [...PER90_STATS, 'clean_sheet_rate', 'goals_prevented', 'goals_conceded_low', 'defcon_norm'];
   const inPool = (p) => p.stats && p.stats.minutes >= R.poolMinMinutes[p.pos];
   const makeDist = (pool) => Object.fromEntries(STAT_KEYS.map((k) => [k, meanSd(pool.map((p) => p.stats[k]))]));
   const makeComposite = (dist, zCap = 3) => (p, weights) => {
@@ -172,16 +186,20 @@ export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DE
         : R.stamina.base + R.stamina.range * Math.min(1, starts / R.stamina.startsForMax);
       attrs.stamina = clamp(stamina + lookup(R.stamina.ageAdjust, ageUsed), R.scale.min, R.scale.max);
 
-      const ow = R.overallWeights[pos];
-      const raw = Object.entries(ow).reduce((s, [k, wt]) => s + wt * attrs[k], 0)
-        / Object.values(ow).reduce((a, b) => a + b, 0);
-      return { p, age, ageUsed, mins, priceLevel, attrs, raw, estimated };
+      // Rated in whichever role suits him best.
+      let raw = -Infinity, role = null;
+      for (const [name, ow] of Object.entries(R.overallRoles[pos])) {
+        const v = Object.entries(ow).reduce((s, [k, wt]) => s + wt * attrs[k], 0) / Object.values(ow).reduce((a, b) => a + b, 0);
+        if (v > raw) { raw = v; role = name; }
+      }
+      return { p, age, ageUsed, mins, priceLevel, attrs, raw, role, estimated };
     });
 
     // Overall: compare each player's weighted average with regular players in the same position.
     const rawPool = rated.filter((r) => r.mins >= R.poolMinMinutes[pos]).map((r) => r.raw).sort((a, b) => a - b);
     for (const r of rated) {
-      const overall = clamp((1 - R.overallPriceBlend) * curve(percentile(rawPool, r.raw)) + R.overallPriceBlend * r.priceLevel, R.scale.min, R.scale.max);
+      const teamLift = clubLift(r.p.teamCode);
+      const overall = clamp((1 - R.overallPriceBlend) * curve(percentile(rawPool, r.raw)) + R.overallPriceBlend * r.priceLevel + teamLift, R.scale.min, R.scale.max);
 
       const jitter = (hash01(r.p.code ?? r.p.id) * 2 - 1) * R.potentialJitter;
       const potential = clamp(Math.max(overall, overall + lookup(R.potentialAgeBonus, r.ageUsed) + jitter), R.scale.min, R.scale.max);
@@ -195,6 +213,7 @@ export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DE
       out.push({
         ...rest,
         age: r.ageUsed,
+        role: r.role,
         attrs: Object.fromEntries(Object.entries(r.attrs).map(([k, v]) => [k, Math.round(v)])),
         overall: Math.round(overall),
         overallExact: Math.round(overall * 10) / 10,

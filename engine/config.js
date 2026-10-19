@@ -40,8 +40,9 @@ export const RATINGS = {
     attack: { expected_goals: 0.45, goals_scored: 0.25, threat: 0.30 },
     passing: { expected_assists: 0.40, creativity: 0.40, assists: 0.20 },
     defending: {
-      // Tackles + clearances/blocks/interceptions count the same way for every position.
-      outfield: { tackles: 0.5, clearances_blocks_interceptions: 0.5 },
+      // FPL defensive contributions, scaled by each position's own target (defenders 10,
+      // midfielders and forwards 12 per game), plus tackles which count the same for everyone.
+      outfield: { defcon_norm: 0.6, tackles: 0.4 },
       GK: { clean_sheet_rate: 0.50, goals_prevented: 0.50 },
     },
     goalkeeping: { goals_prevented: 0.40, clean_sheet_rate: 0.35, saves: 0.25 },
@@ -78,12 +79,26 @@ export const RATINGS = {
 
   // Overall = weighted average of abilities, then compared with others in the same position,
   // so it means "how good for his position" (abilities themselves stay on one shared scale).
-  overallWeights: {
-    GK: { goalkeeping: 0.80, passing: 0.10, stamina: 0.10 },
-    DEF: { defending: 0.50, passing: 0.15, pace: 0.15, stamina: 0.15, attack: 0.05 },
-    MID: { passing: 0.35, attack: 0.25, defending: 0.15, stamina: 0.15, pace: 0.10 },
-    FWD: { attack: 0.45, pace: 0.20, passing: 0.15, stamina: 0.15, defending: 0.05 },
+  // Each position has one or more roles; a player is rated in whichever role suits him best,
+  // so a holding midfielder isn't marked down for not scoring.
+  overallRoles: {
+    GK: { keeper: { goalkeeping: 0.80, passing: 0.10, stamina: 0.10 } },
+    DEF: {
+      centreBack: { defending: 0.60, passing: 0.15, pace: 0.10, stamina: 0.15 },
+      fullBack: { defending: 0.35, passing: 0.30, pace: 0.20, stamina: 0.15 },
+    },
+    MID: {
+      attacking: { passing: 0.35, attack: 0.30, pace: 0.15, stamina: 0.10, defending: 0.10 },
+      holding: { defending: 0.45, passing: 0.30, stamina: 0.20, pace: 0.05 },
+    },
+    FWD: { striker: { attack: 0.50, pace: 0.20, passing: 0.15, stamina: 0.15 } },
   },
+  defconTarget: { GK: 10, DEF: 10, MID: 12, FWD: 12 },
+
+  // Lift for players at stronger clubs, measured by the club's squad value (sum of the
+  // 15 highest start-of-season FPL prices). Stronger squads make individual stats look worse
+  // for some roles, and FM rates players at big clubs higher. In overall points per spread.
+  clubStrengthBonus: { squadSize: 15, perSd: 1.0, min: -1, max: 1.5 },
   overallPriceBlend: 0.25,     // 25% of overall from start-of-season price, so one odd season can't sink a star
 
   // Hidden potential: overall + age bonus, ±1 random (fixed per player), capped at 20.

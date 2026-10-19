@@ -10,7 +10,8 @@ const SEASON_START = '2026-08-21';       // ages are worked out on the first day
 const SAMPLE = { GK: 5, DEF: 8, MID: 10, FWD: 7 };
 
 const raw = JSON.parse(await readFile(new URL('players-raw.json', DATA), 'utf8'));
-const players = buildRatings(raw, { referenceDate: SEASON_START });
+const teams = JSON.parse(await readFile(new URL('teams.json', DATA), 'utf8'));
+const players = buildRatings(raw, { referenceDate: SEASON_START, teams });
 await writeFile(new URL('players.json', DATA), JSON.stringify(players));
 
 const sample = Object.entries(SAMPLE).flatMap(([pos, n]) =>
