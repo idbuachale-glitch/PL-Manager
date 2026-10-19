@@ -1,0 +1,10 @@
+{
+  "name": "pl-manager",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fetch": "node scripts/fetch-data.mjs",
+    "ratings": "node scripts/build-ratings.mjs",
+    "crests": "node scripts/fetch-crests.mjs"
+  }
+}

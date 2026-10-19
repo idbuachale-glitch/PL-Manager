@@ -1,0 +1,45 @@
+name: Update player data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 * * 2'   # every Tuesday 04:17 UTC (07:17 Bahrain), after the weekend's games
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Fetch squads, fixtures and last-season stats
+        run: node scripts/fetch-data.mjs
+      - name: Build ratings
+        run: node scripts/build-ratings.mjs
+      - name: Find club crests
+        run: node scripts/fetch-crests.mjs | tee crest-report.txt
+      - name: Show rating check and crest report in the run summary
+        run: |
+          cat data/rating-sample.md >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Crests" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat crest-report.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - name: Save data to the repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet || git commit -m "Update player data"
+          git pull --rebase
+          git push
