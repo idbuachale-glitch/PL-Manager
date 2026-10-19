@@ -1,0 +1,12 @@
+{
+  "fetchedAt": "2026-10-19T12:48:50.223Z",
+  "lastSeason": "2025/26",
+  "players": 668,
+  "withLastSeason": 481,
+  "withBirthDate": 653,
+  "fixtures": 380,
+  "credits": [
+    "Fantasy Premier League",
+    "vaastav/Fantasy-Premier-League (MIT)"
+  ]
+}
