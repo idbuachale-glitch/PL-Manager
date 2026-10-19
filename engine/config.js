@@ -117,3 +117,56 @@ export const VALUE = {
   potentialFactorPerPoint: 0.05, // +5% per point of potential above current overall
   roundTo: 0.5,
 };
+
+// Match engine. Calibrated so a Premier League season averages about 2.7 goals a game,
+// about 44% home wins, 24% draws and 32% away wins.
+export const MATCH = {
+  stoppage: { firstHalf: [1, 4], secondHalf: [2, 7] },
+  homeAdvantage: { shots: 1.08, away: 0.95, possession: 0.02 },
+
+  // Possession: who has the ball each minute.
+  possession: {
+    perControlPoint: 0.03,     // per point of midfield control difference
+    perExtraCentralMid: 0.025, // formation matchup: extra body in central midfield
+    patientTempo: 0.05, press: 0.03, narrow: 0.03,
+    min: 0.28, max: 0.72,
+  },
+
+  // Chances: chance per minute of possession that the attack ends in a shot.
+  shotRate: 0.212,
+  qualitySensitivity: 0.075,    // per point of attack-vs-defence difference
+  shotRateMax: 0.6,
+
+  // Shot quality (xG).
+  xg: { base: 0.1, sensitivity: 0.03, min: 0.02, max: 0.8 },
+  finishingPerPoint: 0.04,     // shooter's Attack vs 13
+  goalkeepingPerPoint: 0.05,   // keeper vs 12
+  assistedShare: 0.8,
+
+  penaltyPerMinute: 0.0027,    // about 0.25 a match
+  penaltyXg: 0.78,
+  cornerPerMinute: 0.035,      // plus corners from saved and blocked shots
+  cornerFromShot: 0.3,
+  cornerShot: { chance: 0.22, xg: 0.07 },
+
+  fouls: { perMinute: 0.24, defenderShare: 0.6, yellowPerFoul: 0.16, straightRedPerFoul: 0.004 },
+  injuryPerPlayerMinute: 0.00012,
+  redCardPenalty: 0.12,        // each missing player cuts attack and defence by 12%
+
+  // Fatigue: condition (0–100) lost per minute, more with pressing and fast tempo, less with stamina.
+  fatigue: { perMinute: 0.24, press: 0.6, tempo: 0.15, staminaRef: 12, perStaminaPoint: 0.05 },
+  conditionEffect: 0.18,       // at condition 0 a player plays at 82% of his ratings
+
+  // How tactics change chances. See the stage-2 notes in README for what each one does.
+  tactics: {
+    mentalityOwn: 0.25,        // attacking mentality: more shots for you...
+    mentalityOpp: 0.12,        // ...and more for the opponent (gaps at the back)
+    pressTurnovers: 0.10,      // high press: extra chances from winning the ball high
+    pressSpaceBehind: 0.12,    // but leaves space behind for the opponent
+    pressSpaceXg: 0.06,
+    directBase: 0.06, directVsHighLine: 0.18, directPacePerPoint: 0.04,
+    patientShots: 0.05, patientXg: 0.12,
+    wideVsNarrow: 0.15,
+    spareDefenderXg: 0.92, outnumberedXg: 1.06,
+  },
+};

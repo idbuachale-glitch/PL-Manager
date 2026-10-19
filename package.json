@@ -5,6 +5,8 @@
   "scripts": {
     "fetch": "node scripts/fetch-data.mjs",
     "ratings": "node scripts/build-ratings.mjs",
-    "crests": "node scripts/fetch-crests.mjs"
+    "crests": "node scripts/fetch-crests.mjs",
+    "sim": "node scripts/sim-season.mjs",
+    "test": "node --test tests/*.test.mjs"
   }
 }
