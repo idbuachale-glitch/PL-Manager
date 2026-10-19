@@ -1,0 +1,30 @@
+name: Find club crests
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  crests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Find and check a crest for every club
+        run: node scripts/fetch-crests.mjs | tee crest-report.txt
+      - name: Show report in run summary
+        run: |
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat crest-report.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - name: Save crest links
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add data/clubs.json
+          git diff --cached --quiet || git commit -m "Update club crest links"
+          git push

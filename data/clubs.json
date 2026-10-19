@@ -1,0 +1,26 @@
+{
+  "season": "2026-27",
+  "note": "fplCode is FPL's permanent team 'code' field (not the per-season 'id'). crest is filled in by scripts/fetch-crests.mjs, which reads the real codes from bootstrap-static, so a wrong or missing code here is corrected on the next fetch. Colours are used for the fallback badge.",
+  "clubs": [
+    { "name": "Arsenal",           "short": "ARS", "fplCode": 3,    "colours": ["#EF0107", "#FFFFFF"], "crest": null },
+    { "name": "Aston Villa",       "short": "AVL", "fplCode": 7,    "colours": ["#670E36", "#95BFE5"], "crest": null },
+    { "name": "Bournemouth",       "short": "BOU", "fplCode": 91,   "colours": ["#DA291C", "#000000"], "crest": null },
+    { "name": "Brentford",         "short": "BRE", "fplCode": 94,   "colours": ["#E30613", "#FFFFFF"], "crest": null },
+    { "name": "Brighton",          "short": "BHA", "fplCode": 36,   "colours": ["#0057B8", "#FFFFFF"], "crest": null },
+    { "name": "Chelsea",           "short": "CHE", "fplCode": 8,    "colours": ["#034694", "#FFFFFF"], "crest": null },
+    { "name": "Coventry City",     "short": "COV", "fplCode": null, "colours": ["#59CBE8", "#FFFFFF"], "crest": null },
+    { "name": "Crystal Palace",    "short": "CRY", "fplCode": 31,   "colours": ["#1B458F", "#C4122E"], "crest": null },
+    { "name": "Everton",           "short": "EVE", "fplCode": 11,   "colours": ["#003399", "#FFFFFF"], "crest": null },
+    { "name": "Fulham",            "short": "FUL", "fplCode": 54,   "colours": ["#FFFFFF", "#000000"], "crest": null },
+    { "name": "Hull City",         "short": "HUL", "fplCode": 88,   "colours": ["#F5A12D", "#000000"], "crest": null },
+    { "name": "Ipswich Town",      "short": "IPS", "fplCode": 40,   "colours": ["#3A64A3", "#FFFFFF"], "crest": null },
+    { "name": "Leeds United",      "short": "LEE", "fplCode": 2,    "colours": ["#FFFFFF", "#1D428A"], "crest": null },
+    { "name": "Liverpool",         "short": "LIV", "fplCode": 14,   "colours": ["#C8102E", "#FFFFFF"], "crest": null },
+    { "name": "Manchester City",   "short": "MCI", "fplCode": 43,   "colours": ["#6CABDD", "#FFFFFF"], "crest": null },
+    { "name": "Manchester United", "short": "MUN", "fplCode": 1,    "colours": ["#DA291C", "#FBE122"], "crest": null },
+    { "name": "Newcastle United",  "short": "NEW", "fplCode": 4,    "colours": ["#241F20", "#FFFFFF"], "crest": null },
+    { "name": "Nottingham Forest", "short": "NFO", "fplCode": 17,   "colours": ["#DD0000", "#FFFFFF"], "crest": null },
+    { "name": "Sunderland",        "short": "SUN", "fplCode": 56,   "colours": ["#EB172B", "#FFFFFF"], "crest": null },
+    { "name": "Tottenham Hotspur", "short": "TOT", "fplCode": 6,    "colours": ["#132257", "#FFFFFF"], "crest": null }
+  ]
+}
