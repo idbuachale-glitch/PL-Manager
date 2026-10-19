@@ -42,6 +42,7 @@ function deriveStats(last) {
   out.clean_sheet_rate = cs === null ? null : cs / n90;
   const xgc = num(last.expected_goals_conceded), gc = num(last.goals_conceded);
   out.goals_prevented = xgc === null || gc === null ? null : (xgc - gc) / n90;
+  out.goals_conceded_low = gc === null ? null : -gc / n90;
   return out;
 }
 
@@ -74,7 +75,7 @@ export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DE
 
     // Pool averages and spreads for every stat.
     const dist = {};
-    for (const key of [...PER90_STATS, 'clean_sheet_rate', 'goals_prevented']) {
+    for (const key of [...PER90_STATS, 'clean_sheet_rate', 'goals_prevented', 'goals_conceded_low']) {
       dist[key] = meanSd(pool.map((p) => p.stats[key]));
     }
     const z = (p, key) => {
@@ -123,7 +124,8 @@ export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DE
         const c = p.stats ? composite(p, weights) : null;
         const statLevel = c === null ? priceLevel : curve(percentile(poolSorted[ability], c));
         const ww = c === null ? 0 : w;
-        attrs[ability] = ww * statLevel + (1 - ww) * priceLevel;
+        const pb = R.abilityPriceBlend[pos === 'GK' ? 'GK' : 'outfield'];
+        attrs[ability] = (1 - pb) * (ww * statLevel + (1 - ww) * priceLevel) + pb * priceLevel;
       }
       if (pos === 'GK' && R.gkPassingFromPrice) { attrs.passing = priceLevel; estimated.push('passing'); }
 
@@ -159,7 +161,8 @@ export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DE
       const potential = clamp(Math.max(overall, overall + lookup(R.potentialAgeBonus, r.ageUsed) + jitter), R.scale.min, R.scale.max);
 
       const V = value;
-      const base = V.price.factor * Math.max(0.5, r.p.price - V.price.offset) ** V.price.power;
+      const adjPrice = r.p.price + (V.positionPriceBoost?.[pos] ?? 0);
+      const base = V.price.factor * Math.max(0.5, adjPrice - V.price.offset) ** V.price.power;
       const val = base * lookup(V.ageFactor, r.ageUsed) * (1 + V.potentialFactorPerPoint * (potential - overall));
 
       const { stats, last, ...rest } = r.p;

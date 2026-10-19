@@ -29,11 +29,15 @@ export const RATINGS = {
     passing: { expected_assists: 0.40, creativity: 0.40, assists: 0.20 },
     defending: {
       outfield: { defensive_contribution: 0.70, influence: 0.30 },
-      DEF: { defensive_contribution: 0.50, clean_sheet_rate: 0.25, goals_prevented: 0.25 },
+      DEF: { defensive_contribution: 0.35, clean_sheet_rate: 0.35, goals_conceded_low: 0.30 },
       GK: { clean_sheet_rate: 0.50, goals_prevented: 0.50 },
     },
-    goalkeeping: { goals_prevented: 0.50, clean_sheet_rate: 0.30, saves: 0.20 },
+    goalkeeping: { goals_prevented: 0.40, clean_sheet_rate: 0.35, saves: 0.25 },
   },
+
+  // Share of every stat-based ability taken from price, so one odd season can't
+  // give a star a silly low number. Keepers get more, because their stats are noisier.
+  abilityPriceBlend: { outfield: 0.20, GK: 0.35 },
 
   // Pace: no free data measures speed, so it is an estimate (editable in the app).
   pace: {
@@ -44,7 +48,7 @@ export const RATINGS = {
 
   // Stamina: based on how much a player started, plus age.
   stamina: {
-    base: 8, startsForMax: 30, range: 10,
+    base: 7, startsForMax: 34, range: 10,
     ageAdjust: [[29, 1], [32, 0], [99, -2]],
     noDataValue: 11,
   },
@@ -72,7 +76,9 @@ export const RATINGS = {
 export const VALUE = {
   // Value in £m = factor * (FPL price - offset) ^ power  ->  £4.5m ≈ £3m, £8m ≈ £33m, £15m ≈ £150m
   price: { factor: 3, offset: 3.5, power: 1.6 },
-  ageFactor: [[21, 1.25], [24, 1.15], [27, 1.0], [29, 0.8], [31, 0.55], [99, 0.35]],
+  // FPL prices keepers and defenders lower than their transfer value, so lift them first.
+  positionPriceBoost: { GK: 2.0, DEF: 1.0, MID: 0, FWD: 0 },
+  ageFactor: [[21, 1.25], [24, 1.15], [27, 1.0], [29, 0.8], [30, 0.65], [32, 0.5], [99, 0.35]],
   potentialFactorPerPoint: 0.05, // +5% per point of potential above current overall
   roundTo: 0.5,
 };
