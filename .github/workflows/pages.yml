@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Data refreshes are pushed by the workflow's own token, which doesn't trigger a push event,
+  # so republish whenever the data update finishes.
+  workflow_run:
+    workflows: ['Update player data']
+    types: [completed]
 
 permissions:
   contents: read
@@ -22,6 +27,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - name: Collect the files the app needs
         run: |
           mkdir -p _site/data

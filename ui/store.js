@@ -18,7 +18,8 @@ export const subscribe = (fn) => { listeners.add(fn); return () => listeners.del
 export const notify = () => { for (const fn of listeners) fn(); };
 
 export async function loadData() {
-  const get = (f) => fetch(new URL(`../data/${f}`, import.meta.url)).then((r) => r.json());
+  // no-cache: always check for newer squads instead of using a copy saved on the phone.
+  const get = (f) => fetch(new URL(`../data/${f}`, import.meta.url), { cache: 'no-cache' }).then((r) => r.json());
   const [players, clubs, fixtures] = await Promise.all([get('players.json'), get('clubs.json'), get('fixtures.json')]);
   data.players = players;
   data.clubs = clubs.clubs.map((c) => ({ code: c.fplCode, short: c.short, name: c.name, colours: c.colours, crest: c.crest }));
