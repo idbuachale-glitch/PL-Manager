@@ -41,9 +41,10 @@ export function positionsOf(p) {
   } else if (p.pos === 'MID') {
     if (s) {
       const winger = () => { natural = ['W']; secondary = s.creativity >= 25 ? ['AM'] : s.xg >= 0.3 ? ['ST'] : ['AM']; };
+      const wideProfile = s.threat >= 15 && s.defcon <= 8 && a.pace >= 13;   // attacks a lot, defends little: plays wide
       if (s.threat >= 30) winger();
-      else if (s.creativity >= 30 && s.threat >= 15) { natural = ['AM']; secondary = ['CM', ...(a.pace >= 14 ? ['W'] : [])]; }
-      else if (s.threat >= 22) winger();
+      else if (s.creativity >= 30 && s.threat >= 15 && !(s.defcon < 6 && a.pace >= 14)) { natural = ['AM']; secondary = ['CM', ...(a.pace >= 14 ? ['W'] : [])]; }
+      else if (s.threat >= 22 || wideProfile) winger();
       else if (s.defcon >= 10.5 && s.threat < 12) { natural = s.creativity >= 20 ? ['DM', 'CM'] : ['DM']; secondary = s.creativity >= 20 ? [] : ['CM']; }
       else { natural = ['CM']; secondary = [...(s.defcon >= 8 ? ['DM'] : []), ...(s.creativity >= 22 ? ['AM'] : [])]; }
     } else { natural = ['CM']; secondary = ['AM', 'DM', 'W']; }   // no data: a flexible central midfielder

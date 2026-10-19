@@ -154,6 +154,29 @@
           "W"
         ]
       }
+    },
+    "440993": {
+      "name": "Ndiaye",
+      "positions": {
+        "natural": [
+          "W"
+        ],
+        "secondary": [
+          "AM",
+          "ST"
+        ]
+      }
+    },
+    "460842": {
+      "name": "Kudus",
+      "positions": {
+        "natural": [
+          "W"
+        ],
+        "secondary": [
+          "AM"
+        ]
+      }
     }
   }
 }
