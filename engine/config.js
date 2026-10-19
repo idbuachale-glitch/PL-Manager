@@ -47,25 +47,29 @@ export const RATINGS = {
     goalkeeping: { goals_prevented: 0.40, clean_sheet_rate: 0.35, saves: 0.25 },
   },
 
-  // Defenders also get up to ±2 Defending from how well their team defended
+  // Defenders also get up to ±3 Defending from how well their team defended
   // (clean sheets and goals conceded per 90, compared with other defenders).
-  defenderTeamBonus: { range: 2, weights: { clean_sheet_rate: 0.5, goals_conceded_low: 0.5 } },
+  defenderTeamBonus: { range: 3, weights: { clean_sheet_rate: 0.5, goals_conceded_low: 0.5 } },
 
   // Share of every stat-based ability taken from price, so one odd season can't
   // give a star a silly low number. Keepers get more, because their stats are noisier.
-  abilityPriceBlend: { outfield: 0.20, GK: 0.35 },
+  abilityPriceBlend: { outfield: 0.25, GK: 0.45 },
+
+  // Free data only measures chance creation, not general passing, so centre-backs look worse
+  // passers than they are. These are added to Passing by position.
+  passingBonus: { GK: 0, DEF: 3, MID: 0, FWD: 1 },
 
   // Pace: no free data measures speed, so it is an estimate (editable in the app).
   pace: {
     base: { GK: 8, DEF: 12, MID: 12, FWD: 13 },
     threatBonus: 4,            // up to ±2 from attacking threat, outfield only
-    ageAdjust: [[23, 1.5], [27, 1], [30, 0], [32, -1.5], [99, -3]], // [up to age, change]
+    ageAdjust: [[23, 1.5], [27, 1], [30, 0], [32, -1], [99, -2]], // [up to age, change]
   },
 
   // Stamina: based on how much a player started, plus age.
   stamina: {
     base: 7, startsForMax: 34, range: 10,
-    ageAdjust: [[29, 1], [32, 0], [99, -2]],
+    ageAdjust: [[29, 1], [32, 0], [99, -1]],
     noDataValue: 11,
   },
 
@@ -80,7 +84,7 @@ export const RATINGS = {
     MID: { passing: 0.35, attack: 0.25, defending: 0.15, stamina: 0.15, pace: 0.10 },
     FWD: { attack: 0.45, pace: 0.20, passing: 0.15, stamina: 0.15, defending: 0.05 },
   },
-  overallPriceBlend: 0.15,     // 15% of overall from price, to catch odd outliers
+  overallPriceBlend: 0.25,     // 25% of overall from start-of-season price, so one odd season can't sink a star
 
   // Hidden potential: overall + age bonus, ±1 random (fixed per player), capped at 20.
   potentialAgeBonus: [[18, 4], [19, 3.5], [20, 3], [21, 2.5], [22, 2], [23, 1], [24, 0.5], [99, 0]],

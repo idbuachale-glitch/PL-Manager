@@ -124,6 +124,7 @@ const players = await mapLimit(elements, 6, async (e, i) => {
     teamShort: team.short_name,
     pos: POS[e.element_type],
     price: e.now_cost / 10,
+    priceStart: (e.now_cost - (e.cost_change_start ?? 0)) / 10,
     birthDate: e.birth_date ?? null,
     status: e.status,
     last,

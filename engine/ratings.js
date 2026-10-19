@@ -65,7 +65,8 @@ function percentile(sortedPool, x) {
 export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DEFAULT_VALUE, referenceDate } = {}) {
   const R = ratings;
   const curve = (p) => clamp(R.curve.base + R.curve.range * clamp(p, 0, 1) ** R.curve.power, R.scale.min, R.scale.max);
-  const players = rawPlayers.map((p) => ({ ...p, stats: deriveStats(p.last) }));
+  // Start-of-season price, so this season's real form doesn't creep into ratings.
+  const players = rawPlayers.map((p) => ({ ...p, price: p.priceStart ?? p.price, stats: deriveStats(p.last) }));
   const out = [];
 
   const STAT_KEYS = [...PER90_STATS, 'clean_sheet_rate', 'goals_prevented', 'goals_conceded_low'];
@@ -151,6 +152,7 @@ export function buildRatings(rawPlayers, { ratings = DEFAULT_RATINGS, value = DE
         const tc = posComposite(p, R.defenderTeamBonus.weights);
         if (tc !== null) attrs.defending += w * R.defenderTeamBonus.range * 2 * (percentile(teamBonusSorted, tc) - 0.5);
       }
+      if (attrs.passing !== undefined) attrs.passing += R.passingBonus?.[pos] ?? 0;
       for (const a of Object.keys(abilities)) attrs[a] = clamp(attrs[a], R.scale.min, R.scale.max);
       if (pos === 'GK' && R.gkPassingFromPrice) { attrs.passing = priceLevel; estimated.push('passing'); }
 
