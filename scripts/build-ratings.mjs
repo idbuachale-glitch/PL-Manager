@@ -12,6 +12,18 @@ const SAMPLE = { GK: 5, DEF: 8, MID: 10, FWD: 7 };
 const raw = JSON.parse(await readFile(new URL('players-raw.json', DATA), 'utf8'));
 const teams = JSON.parse(await readFile(new URL('teams.json', DATA), 'utf8'));
 const players = buildRatings(raw, { referenceDate: SEASON_START, teams });
+
+// Hand corrections (data/rating-overrides.json) replace the formula for named players.
+let overrides = {};
+try { overrides = JSON.parse(await readFile(new URL('rating-overrides.json', DATA), 'utf8')).players ?? {}; } catch {}
+for (const p of players) {
+  const o = overrides[String(p.code)];
+  if (!o) continue;
+  if (o.attrs) Object.assign(p.attrs, o.attrs);
+  if (o.overall != null) { p.overall = o.overall; p.overallExact = o.overall; }
+  p.potential = Math.max(p.potential, p.overall);
+  p.estimated = [...p.estimated, 'manual'];
+}
 await writeFile(new URL('players.json', DATA), JSON.stringify(players));
 
 const sample = Object.entries(SAMPLE).flatMap(([pos, n]) =>

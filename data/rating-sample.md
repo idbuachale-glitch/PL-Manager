@@ -8,12 +8,12 @@ All ratings are out of 20, FM style. Atk = Attack (Goalkeeping for keepers), Pas
 | Raya | ARS | GK | 30 | **17** | GK 15 | 17 | 17 | 8 | 17 | 3330 | £21.5m |
 | Donnarumma | MCI | GK | 27 | **20** | GK 17 | 17 | 17 | 9 | 18 | 3060 | £27.5m |
 | Pickford | EVE | GK | 32 | **17** | GK 16 | 17 | 16 | 7 | 17 | 3420 | £14m |
-| A.Becker | LIV | GK | 33 | **13** | GK 10 | 17 | 11 | 6 | 14 | 2340 | £9.5m |
+| A.Becker | LIV | GK | 33 | **16** | GK 16 | 17 | 15 | 6 | 14 | 2340 | £9.5m |
 | Sels | NFO | GK | 34 | **17** | GK 16 | 15 | 15 | 6 | 15 | 2667 | £8m |
 | Gabriel | ARS | DEF | 28 | **20** | 9 | 12 | 15 | 12 | 17 | 2750 | £36.5m |
 | J.Timber | ARS | DEF | 25 | **20** | 10 | 13 | 14 | 13 | 16 | 2452 | £27.5m |
 | O'Reilly | MCI | DEF | 21 | **20** | 10 | 13 | 14 | 14 | 17 | 2643 | £34.5m |
-| Virgil | LIV | DEF | 35 | **13** | 9 | 12 | 11 | 10 | 16 | 3420 | £10m |
+| Virgil | LIV | DEF | 35 | **17** | 9 | 14 | 16 | 10 | 16 | 3420 | £10m |
 | Guéhi | MCI | DEF | 26 | **20** | 9 | 13 | 14 | 13 | 18 | 3150 | £22.5m |
 | Matheus N. | MCI | DEF | 27 | **19** | 8 | 14 | 13 | 12 | 17 | 2861 | £22.5m |
 | Lacroix | CHE | DEF | 26 | **19** | 9 | 11 | 14 | 13 | 18 | 3085 | £22.5m |
