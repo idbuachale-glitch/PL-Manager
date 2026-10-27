@@ -36,4 +36,4 @@ All ratings are out of 20, FM style. Atk = Attack (Goalkeeping for keepers), Pas
 | Gyökeres | ARS | FWD | 28 | **16** | 18 | 12 | 6 | 15 | 16 | 2217 | £22m |
 | João Pedro | CHE | FWD | 24 | **16** | 17 | 13 | 7 | 16 | 17 | 2658 | £32.5m |
 
-Rated 563 players in squads. 259 had no Premier League stats last season. 15 had no birth date (age set to 26).
+Rated 563 players in squads. 260 had no Premier League stats last season. 14 had no birth date (age set to 26).
