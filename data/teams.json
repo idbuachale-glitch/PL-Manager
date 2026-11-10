@@ -36,7 +36,7 @@
     "strengthDefenceHome": 0,
     "strengthDefenceAway": 0,
     "strengthOverallHome": 3,
-    "strengthOverallAway": 3
+    "strengthOverallAway": 4
   },
   {
     "id": 4,
@@ -49,7 +49,7 @@
     "strengthDefenceHome": 0,
     "strengthDefenceAway": 0,
     "strengthOverallHome": 3,
-    "strengthOverallAway": 3
+    "strengthOverallAway": 4
   },
   {
     "id": 5,
@@ -61,7 +61,7 @@
     "strengthAttackAway": 0,
     "strengthDefenceHome": 0,
     "strengthDefenceAway": 0,
-    "strengthOverallHome": 3,
+    "strengthOverallHome": 4,
     "strengthOverallAway": 4
   },
   {
@@ -101,7 +101,7 @@
     "strengthDefenceHome": 0,
     "strengthDefenceAway": 0,
     "strengthOverallHome": 2,
-    "strengthOverallAway": 3
+    "strengthOverallAway": 2
   },
   {
     "id": 9,
@@ -204,8 +204,8 @@
     "strengthAttackAway": 0,
     "strengthDefenceHome": 0,
     "strengthDefenceAway": 0,
-    "strengthOverallHome": 4,
-    "strengthOverallAway": 4
+    "strengthOverallHome": 3,
+    "strengthOverallAway": 3
   },
   {
     "id": 17,
@@ -231,7 +231,7 @@
     "strengthDefenceHome": 0,
     "strengthDefenceAway": 0,
     "strengthOverallHome": 3,
-    "strengthOverallAway": 3
+    "strengthOverallAway": 2
   },
   {
     "id": 19,
@@ -243,7 +243,7 @@
     "strengthAttackAway": 0,
     "strengthDefenceHome": 0,
     "strengthDefenceAway": 0,
-    "strengthOverallHome": 2,
+    "strengthOverallHome": 3,
     "strengthOverallAway": 3
   },
   {
@@ -256,7 +256,7 @@
     "strengthAttackAway": 0,
     "strengthDefenceHome": 0,
     "strengthDefenceAway": 0,
-    "strengthOverallHome": 3,
+    "strengthOverallHome": 2,
     "strengthOverallAway": 3
   }
 ]
